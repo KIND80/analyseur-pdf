@@ -3,6 +3,8 @@ import fitz  # PyMuPDF
 from openai import OpenAI
 from fpdf import FPDF
 import base64
+import smtplib
+from email.message import EmailMessage
 
 # UI config
 st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
@@ -49,6 +51,33 @@ uploaded_files = st.file_uploader(
     type="pdf",
     accept_multiple_files=True
 )
+
+def envoyer_email_admin(pdf_path, user_objective, uploaded_files):
+    msg = EmailMessage()
+    msg["Subject"] = "Nouvelle analyse assurance santé"
+    msg["From"] = "info@monfideleconseiller.ch"
+    msg["To"] = "contact@fideleconseiller.ch"
+    msg.set_content(f"""
+Nouvelle analyse reçue depuis l'outil.
+
+🎯 Objectif de l'utilisateur : {user_objective}
+
+Des contrats ont été téléversés et une analyse a été générée. Voir pièce jointe.
+""")
+
+    with open(pdf_path, "rb") as f:
+        msg.add_attachment(f.read(), maintype="application", subtype="pdf", filename="analyse.pdf")
+
+    for i, file in enumerate(uploaded_files):
+        file.seek(0)
+        msg.add_attachment(file.read(), maintype="application", subtype="pdf", filename=f"contrat_{i+1}.pdf")
+
+    try:
+        with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+            smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
+            smtp.send_message(msg)
+    except Exception as e:
+        st.warning(f"📧 L'email n'a pas pu être envoyé automatiquement : {e}")
 
 if uploaded_files:
     if len(uploaded_files) > 3:
@@ -114,6 +143,8 @@ Tu ne dis jamais que tu es une IA. Tu rédiges comme un conseiller humain.
                     b64 = base64.b64encode(f.read()).decode()
                     href = f'<a href="data:application/octet-stream;base64,{b64}" download="analyse.pdf">📄 Cliquez ici pour télécharger le PDF</a>'
                     st.markdown(href, unsafe_allow_html=True)
+
+                envoyer_email_admin(pdf_output, user_objective, uploaded_files)
 
         except Exception as e:
             st.error(f"❌ Erreur : {e}")
