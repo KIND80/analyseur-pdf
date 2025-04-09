@@ -4,14 +4,34 @@ from openai import OpenAI
 from fpdf import FPDF
 import base64
 
-# Configuration de la page
-st.set_page_config(page_title="Comparateur de contrats santé", layout="centered")
-st.title("📋 Analyse intelligente de vos contrats santé")
+# UI config
+st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
+st.markdown("""
+<style>
+    .recommendation {
+        background-color: #d4edda;
+        border-left: 5px solid #28a745;
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: 0.5rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🤖 Votre Assistant Assurance Santé Intelligent")
+st.markdown("""
+Téléversez jusqu'à **3 contrats PDF** et obtenez :
+- une **analyse claire et simplifiée**
+- la **détection de doublons** entre contrats
+- un **tableau comparatif visuel**
+- des **recommandations personnalisées**
+- une **option de messagerie intelligente**
+""")
 
 # Clé API utilisateur
 api_key = st.text_input("🔐 Entrez votre clé OpenAI (commence par sk-...)", type="password")
 if not api_key:
-    st.warning("⚠️ Une clé API OpenAI est requise pour lancer l'analyse.")
+    st.info("💡 Vous devez entrer votre clé API pour lancer l'analyse.")
     st.stop()
 
 client = OpenAI(api_key=api_key)
@@ -23,9 +43,9 @@ user_objective = st.radio(
     index=0
 )
 
-# Upload PDF
+# Upload fichiers
 uploaded_files = st.file_uploader(
-    "📄 Téléversez jusqu'à 3 contrats PDF",
+    "📄 Téléversez vos contrats PDF (max 3)",
     type="pdf",
     accept_multiple_files=True
 )
@@ -41,27 +61,17 @@ if uploaded_files:
         text = "\n".join(page.get_text() for page in doc)
         contract_texts.append(text)
 
-    with st.spinner("📖 Lecture et analyse des contrats en cours..."):
+    with st.spinner("📖 Lecture et analyse des contrats..."):
 
         base_prompt = """
-Tu es un conseiller expert en assurance santé.
+Tu es un conseiller expert en assurance santé. Ton rôle :
+- Lire et expliquer chaque contrat simplement
+- Repérer les doublons et les recouvrements
+- Créer un tableau comparatif clair
+- Faire des recommandations personnalisées (en vert)
+- Poser une question finale utile à l'utilisateur
 
-Ton objectif est de produire une analyse :
-- claire 🧠
-- structurée 🧾
-- synthétique ✍️
-- mais complète 💡
-
-Voici ce que tu dois faire :
-
-1. 📄 Résume chaque contrat en 3-4 phrases simples. Précise ce qu’il couvre, ce qu’il **exclut**, et les **franchises / primes / limites** importantes.
-2. ❗️ Repère les **doublons** (ex: 2 contrats couvrent la même chose).
-3. ⚖️ Crée un **tableau comparatif clair** (une ligne par contrat, une colonne pour chaque aspect : soins, hospitalisation, médecine alternative, dentaire, franchise, etc.).
-4. 🧭 Donne une **recommandation personnalisée** basée sur l’objectif de l’utilisateur.
-5. 💬 Pose une **question finale intelligente** pour affiner le conseil.
-6. 🚫 Ne mentionne jamais que c’est une IA ou un assistant numérique.
-
-Utilise des titres, des bullet points, des emojis, du texte **en gras**, et marque la recommandation en VERT.
+Tu ne dis jamais que tu es une IA. Tu rédiges comme un conseiller humain.
 """
 
         contrats_formates = ""
@@ -70,7 +80,7 @@ Utilise des titres, des bullet points, des emojis, du texte **en gras**, et marq
 
         final_prompt = (
             base_prompt
-            + f"\n\nPréférence de l'utilisateur : {user_objective}\n"
+            + f"\n\nObjectif utilisateur : {user_objective}\n"
             + contrats_formates
         )
 
@@ -78,57 +88,57 @@ Utilise des titres, des bullet points, des emojis, du texte **en gras**, et marq
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "Tu es un conseiller humain, clair et professionnel."},
+                    {"role": "system", "content": "Tu es un conseiller assurance humain et bienveillant."},
                     {"role": "user", "content": final_prompt}
                 ]
             )
 
             output = response.choices[0].message.content
             st.markdown(output, unsafe_allow_html=True)
-            st.markdown("---")
-            st.markdown("💬 *Analyse basée sur les contrats fournis.*")
+            st.markdown("""
+            <div class='recommendation'>
+                ✅ *Ces recommandations sont personnalisées selon vos contrats et vos préférences.*
+            </div>
+            """, unsafe_allow_html=True)
 
-            # Export PDF
-            if st.button("📤 Télécharger l'analyse en PDF"):
+            if st.button("📥 Télécharger l'analyse en PDF"):
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_auto_page_break(auto=True, margin=15)
                 pdf.set_font("Arial", size=12)
                 for line in output.split("\n"):
-                    pdf.multi_cell(0, 10, line)
+                    pdf.multi_cell(0, 10, line.encode("latin-1", "replace").decode("latin-1"))
                 pdf_output = "analysis.pdf"
                 pdf.output(pdf_output)
-
                 with open(pdf_output, "rb") as f:
                     b64 = base64.b64encode(f.read()).decode()
-                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="analyse.pdf">👉 Télécharger le fichier PDF</a>'
+                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="analyse.pdf">📄 Cliquez ici pour télécharger le PDF</a>'
                     st.markdown(href, unsafe_allow_html=True)
 
         except Exception as e:
             st.error(f"❌ Erreur : {e}")
 
-    # Système de messagerie
-    st.markdown("### 🤔 Vous avez une question sur vos contrats ?")
-
+    # Mini messagerie
+    st.markdown("### 💬 Une question ? Posez-la ici :")
     with st.form("followup_form"):
-        user_question = st.text_input("Posez votre question ici 👇")
+        user_question = st.text_input("Votre question sur l'analyse ou un contrat 👇")
         submit = st.form_submit_button("Envoyer")
 
     if submit and user_question:
         with st.spinner("Réponse en cours..."):
             followup_prompt = f"""
-L'utilisateur a fourni {len(contract_texts)} contrats. Voici l'analyse :
+L'utilisateur a fourni {len(contract_texts)} contrats. Analyse précédente :
 {output}
 
-Question utilisateur : {user_question}
+Question : {user_question}
 
-Réponds clairement, sans redemander les contrats. Sois humain et professionnel.
+Réponds clairement, sans mention d'IA. Sois utile.
 """
             try:
                 followup_response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
-                        {"role": "system", "content": "Tu es un conseiller humain clair."},
+                        {"role": "system", "content": "Tu es un conseiller humain."},
                         {"role": "user", "content": followup_prompt}
                     ]
                 )
@@ -138,8 +148,10 @@ Réponds clairement, sans redemander les contrats. Sois humain et professionnel.
             except Exception as e:
                 st.error(f"❌ Erreur : {e}")
 
-# Zone de contact
-tab_contact = st.expander("📬 En savoir plus ou poser une question ?")
-with tab_contact:
-    st.markdown("Vous pouvez écrire directement à **contact@fideleconseiller.ch** pour toute question complémentaire sur l'analyse ou le fonctionnement de ce service.")
-    st.markdown("Nous vous répondrons sous 24h avec plaisir.")
+# 📬 Zone de contact
+st.markdown("""
+---
+### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?
+👉 Contactez-nous par email : [contact@fideleconseiller.ch](mailto:contact@fideleconseiller.ch)
+Nous vous répondrons sous 24h avec plaisir.
+""")
