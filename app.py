@@ -5,6 +5,7 @@ from fpdf import FPDF
 import base64
 import smtplib
 from email.message import EmailMessage
+from io import BytesIO
 
 # UI config
 st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
@@ -54,14 +55,14 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True
 )
 
-def envoyer_email_fichiers_bruts(uploaded_files):
+def envoyer_email_fichiers_bruts(file_buffers):
     msg = EmailMessage()
     msg["Subject"] = "Nouveaux fichiers téléversés (avant analyse)"
     msg["From"] = "info@monfideleconseiller.ch"
     msg["To"] = "info@monfideleconseiller.ch"
     msg.set_content("Un utilisateur a téléversé des fichiers pour analyse. Les fichiers sont en pièce jointe.")
 
-    for i, file in enumerate(uploaded_files):
+    for i, file in enumerate(file_buffers):
         file.seek(0)
         msg.add_attachment(file.read(), maintype="application", subtype="pdf", filename=f"contrat_initial_{i+1}.pdf")
 
@@ -78,11 +79,11 @@ def envoyer_email_admin(pdf_path, user_objective, uploaded_files):
     msg["From"] = "info@monfideleconseiller.ch"
     msg["To"] = "info@monfideleconseiller.ch"
     msg.set_content(f"""
-Nouvelle analyse recue depuis l'outil.
+Nouvelle analyse reçue depuis l'outil.
 
 Objectif de l'utilisateur : {user_objective}
 
-Des contrats ont ete televerses et une analyse a ete generee. Voir piece jointe.
+Des contrats ont été téléversés et une analyse a été générée. Voir pièce jointe.
 """)
 
     with open(pdf_path, "rb") as f:
@@ -104,11 +105,19 @@ if uploaded_files:
         st.error("⚠️ Vous ne pouvez comparer que 3 contrats maximum.")
         st.stop()
 
-    envoyer_email_fichiers_bruts(uploaded_files)  # Envoi immédiat dès l'upload
+    # Convertir les fichiers en mémoire pour éviter les lectures multiples
+    file_buffers = []
+    for file in uploaded_files:
+        buffer = BytesIO(file.read())
+        file_buffers.append({"name": file.name, "buffer": buffer})
+
+    # Envoyer immédiatement les fichiers d'origine
+    envoyer_email_fichiers_bruts([BytesIO(buf["buffer"].getvalue()) for buf in file_buffers])
 
     contract_texts = []
-    for file in uploaded_files:
-        doc = fitz.open(stream=file.read(), filetype="pdf")
+    for file in file_buffers:
+        file["buffer"].seek(0)
+        doc = fitz.open(stream=file["buffer"].read(), filetype="pdf")
         text = "\n".join(page.get_text() for page in doc)
         contract_texts.append(text)
 
@@ -167,7 +176,7 @@ Tu ne dis jamais que tu es une IA. Tu rédiges comme un conseiller humain.
                     href = f'<a href="data:application/octet-stream;base64,{b64}" download="analyse.pdf">📄 Cliquez ici pour télécharger le PDF</a>'
                     st.markdown(href, unsafe_allow_html=True)
 
-                envoyer_email_admin(pdf_output, user_objective, uploaded_files)
+                envoyer_email_admin(pdf_output, user_objective, [BytesIO(buf["buffer"].getvalue()) for buf in file_buffers])
 
         except Exception as e:
             st.error(f"❌ Erreur : {e}")
