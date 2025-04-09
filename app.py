@@ -58,11 +58,11 @@ def envoyer_email_admin(pdf_path, user_objective, uploaded_files):
     msg["From"] = "info@monfideleconseiller.ch"
     msg["To"] = "contact@fideleconseiller.ch"
     msg.set_content(f"""
-Nouvelle analyse reçue depuis l'outil.
+Nouvelle analyse recue depuis l'outil.
 
-🎯 Objectif de l'utilisateur : {user_objective}
+Objectif de l'utilisateur : {user_objective}
 
-Des contrats ont été téléversés et une analyse a été générée. Voir pièce jointe.
+Des contrats ont ete televerses et une analyse a ete generee. Voir piece jointe.
 """)
 
     with open(pdf_path, "rb") as f:
@@ -136,7 +136,8 @@ Tu ne dis jamais que tu es une IA. Tu rédiges comme un conseiller humain.
                 pdf.set_auto_page_break(auto=True, margin=15)
                 pdf.set_font("Arial", size=12)
                 for line in output.split("\n"):
-                    pdf.multi_cell(0, 10, line.encode("latin-1", "replace").decode("latin-1"))
+                    line_clean = line.encode("latin-1", "ignore").decode("latin-1")
+                    pdf.multi_cell(0, 10, line_clean)
                 pdf_output = "analysis.pdf"
                 pdf.output(pdf_output)
                 with open(pdf_output, "rb") as f:
