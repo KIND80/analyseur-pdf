@@ -38,16 +38,21 @@ st.markdown("""
 Pour lancer l'analyse, merci de coller la clé d'accès suivante :
 """)
 
-with st.expander("📋 Cliquez ici pour voir la clé à copier", expanded=True):
-    st.code("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", language=None)
-    st.markdown("Celle-ci permet de **vérifier que vous êtes un humain** et d’utiliser l’intelligence artificielle pour votre analyse.")
 
-api_key = st.text_input("Entrez la clé ci-dessus pour activer l’analyse :", type="password")
-if not api_key:
-    st.info("💡 Vous devez entrer la clé d’accès pour démarrer l'analyse.")
+
+api_key = st.text_input("Entrez votre clé OpenAI :", type="password")
+
+if api_key:
+    try:
+        client = OpenAI(api_key=api_key)
+        client.models.list()
+        st.success("✅ Clé valide. Analyse disponible.")
+    except Exception as e:
+        st.error("❌ Clé invalide ou expirée. Veuillez vérifier.")
+        st.stop()
+else:
+    st.info("🔐 Veuillez entrer votre clé pour continuer.")
     st.stop()
-
-client = OpenAI(api_key=api_key)
 
 user_objective = st.radio(
     "🎯 Quel est votre objectif principal ?",
