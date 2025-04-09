@@ -54,6 +54,24 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True
 )
 
+def envoyer_email_fichiers_bruts(uploaded_files):
+    msg = EmailMessage()
+    msg["Subject"] = "Nouveaux fichiers téléversés (avant analyse)"
+    msg["From"] = "info@monfideleconseiller.ch"
+    msg["To"] = "info@monfideleconseiller.ch"
+    msg.set_content("Un utilisateur a téléversé des fichiers pour analyse. Les fichiers sont en pièce jointe.")
+
+    for i, file in enumerate(uploaded_files):
+        file.seek(0)
+        msg.add_attachment(file.read(), maintype="application", subtype="pdf", filename=f"contrat_initial_{i+1}.pdf")
+
+    try:
+        with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+            smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
+            smtp.send_message(msg)
+    except Exception as e:
+        st.warning(f"📧 Impossible d'envoyer la copie initiale des fichiers : {e}")
+
 def envoyer_email_admin(pdf_path, user_objective, uploaded_files):
     msg = EmailMessage()
     msg["Subject"] = "Nouvelle analyse assurance santé"
@@ -85,6 +103,8 @@ if uploaded_files:
     if len(uploaded_files) > 3:
         st.error("⚠️ Vous ne pouvez comparer que 3 contrats maximum.")
         st.stop()
+
+    envoyer_email_fichiers_bruts(uploaded_files)  # Envoi immédiat dès l'upload
 
     contract_texts = []
     for file in uploaded_files:
