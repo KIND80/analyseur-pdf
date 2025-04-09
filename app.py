@@ -28,6 +28,8 @@ Téléversez jusqu'à **3 contrats PDF** et obtenez :
 - un **tableau comparatif visuel**
 - des **recommandations personnalisées**
 - une **option de messagerie intelligente**
+
+🔒 **Protection des données** : vos fichiers ne sont pas stockés sur des serveurs externes. L'analyse est générée temporairement pour vous et supprimée ensuite. Vous restez seul propriétaire de vos données.
 """)
 
 # Clé API utilisateur
@@ -56,7 +58,7 @@ def envoyer_email_admin(pdf_path, user_objective, uploaded_files):
     msg = EmailMessage()
     msg["Subject"] = "Nouvelle analyse assurance santé"
     msg["From"] = "info@monfideleconseiller.ch"
-    msg["To"] = "contact@fideleconseiller.ch"
+    msg["To"] = "info@monfideleconseiller.ch"
     msg.set_content(f"""
 Nouvelle analyse recue depuis l'outil.
 
@@ -184,6 +186,6 @@ Réponds clairement, sans mention d'IA. Sois utile.
 st.markdown("""
 ---
 ### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?
-👉 Contactez-nous par email : [contact@fideleconseiller.ch](mailto:contact@fideleconseiller.ch)
+👉 Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)
 Nous vous répondrons sous 24h avec plaisir.
 """)
