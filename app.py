@@ -6,34 +6,34 @@ from openai import OpenAI
 st.set_page_config(page_title="Comparateur de contrats santé", layout="centered")
 st.title("📋 Analyse intelligente de vos contrats santé")
 
-# Clé API OpenAI
-api_key = st.text_input("🔐 Entre ta clé OpenAI :", type="password")
+# 🔐 Clé API saisie par l'utilisateur
+api_key = st.text_input("🔐 Entrez votre clé OpenAI (commence par sk-...)", type="password")
 if not api_key:
-    st.warning("⚠️ Clé requise pour lancer l'analyse.")
+    st.warning("⚠️ Une clé API OpenAI est requise pour lancer l'analyse.")
     st.stop()
 
 client = OpenAI(api_key=api_key)
 
-# Choix utilisateur
+# Choix de l'utilisateur
 user_objective = st.radio(
     "🎯 Quel est votre objectif principal ?",
     ["📉 Réduire les coûts", "📈 Améliorer les prestations"],
     index=0
 )
 
-# Upload fichiers
+# Upload des fichiers
 uploaded_files = st.file_uploader(
-    "📄 Téléverse jusqu'à 3 contrats PDF",
+    "📄 Téléversez jusqu'à 3 contrats PDF",
     type="pdf",
     accept_multiple_files=True
 )
 
 if uploaded_files:
     if len(uploaded_files) > 3:
-        st.error("⚠️ Tu ne peux comparer que 3 contrats maximum.")
+        st.error("⚠️ Vous ne pouvez comparer que 3 contrats maximum.")
         st.stop()
 
-    # Extraction des textes
+    # Extraction du texte des fichiers PDF
     contract_texts = []
     for file in uploaded_files:
         doc = fitz.open(stream=file.read(), filetype="pdf")
@@ -42,9 +42,8 @@ if uploaded_files:
 
     with st.spinner("📖 Lecture et analyse des contrats en cours..."):
 
-        # PROMPT GPT-4
         base_prompt = """
-Tu es un conseiller expert en assurance santé. Tu dois analyser plusieurs contrats fournis par un utilisateur.
+Tu es un conseiller expert en assurance santé.
 
 Ton objectif est de produire une analyse :
 - claire 🧠
@@ -58,7 +57,7 @@ Voici ce que tu dois faire :
 2. ❗️ Repère les **doublons** (ex: 2 contrats couvrent la même chose).
 3. ⚖️ Crée un **tableau comparatif clair** (une ligne par contrat, une colonne pour chaque aspect : soins, hospitalisation, médecine alternative, dentaire, franchise, etc.).
 4. 🧭 Donne une **recommandation personnalisée** basée sur l’objectif de l’utilisateur (réduire les coûts ou améliorer la couverture).
-5. 💬 Pose une **question finale intelligente** à l’utilisateur pour affiner le conseil (par exemple : “Êtes-vous prêt à augmenter votre franchise pour payer moins chaque mois ?”)
+5. 💬 Pose une **question finale intelligente** à l’utilisateur pour affiner le conseil.
 6. 🚫 Ne mentionne jamais que c’est une IA ou un assistant numérique.
 
 Utilise des titres, des bullet points, des emojis, et du texte **en gras** pour rendre tout ça lisible.
@@ -74,26 +73,55 @@ Utilise des titres, des bullet points, des emojis, et du texte **en gras** pour 
             + contrats_formates
         )
 
-        # Appel GPT-4
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {
                         "role": "system",
-                        "content": "Tu es un assistant expert en assurance. Tu fais des analyses claires, professionnelles et pédagogiques."
+                        "content": "Tu es un conseiller expert en assurance. Tu expliques clairement, sans mention d’IA, et tu aides la personne à choisir."
                     },
-                    {
-                        "role": "user",
-                        "content": final_prompt
-                    }
+                    {"role": "user", "content": final_prompt}
                 ]
             )
 
             output = response.choices[0].message.content
             st.markdown(output, unsafe_allow_html=True)
             st.markdown("---")
-            st.markdown("📌 *Analyse basée sur les documents fournis.*")
+            st.markdown("💬 *Analyse basée sur les contrats fournis.*")
 
         except Exception as e:
-            st.error(f"❌ Erreur : {e}")
+            st.error(f"❌ Erreur lors de l'analyse : {e}")
+
+    # 💬 Système de questions après l’analyse
+    st.markdown("### 🤔 Vous avez une question sur vos contrats ?")
+
+    with st.form("followup_form"):
+        user_question = st.text_input("Posez votre question ici 👇")
+        submit = st.form_submit_button("Envoyer")
+
+    if submit and user_question:
+        with st.spinner("Réponse en cours..."):
+
+            followup_prompt = f"""
+L'utilisateur a fourni {len(contract_texts)} contrats. Voici l'analyse précédente :
+{output}
+
+Question utilisateur : {user_question}
+
+Réponds précisément, clairement, de façon professionnelle. Ne mentionne pas d’IA.
+"""
+
+            try:
+                followup_response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "Tu es un conseiller santé humain, clair et professionnel."},
+                        {"role": "user", "content": followup_prompt}
+                    ]
+                )
+                answer = followup_response.choices[0].message.content
+                st.markdown(answer, unsafe_allow_html=True)
+
+            except Exception as e:
+                st.error(f"❌ Erreur lors de la réponse : {e}")
