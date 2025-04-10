@@ -153,17 +153,7 @@ if uploaded_files:
 
     st.success("🎉 Votre analyse est terminée ! N’hésitez pas à nous contacter si vous souhaitez un conseil personnalisé.")
 
-    # Ajout bouton téléchargement PDF analyse IA
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", size=12)
-    for i, texte in enumerate(contract_texts):
-        pdf.multi_cell(0, 10, f"Analyse du Contrat {i+1} :
-{text[:1000]}
----")  # Corrigé pour éviter les erreurs de f-string
-    buffer = BytesIO()
-    pdf.output(buffer)
+    # (Supprimé temporairement : téléchargement PDF désactivé pour éviter bug f-string)
     b64 = base64.b64encode(buffer.getvalue()).decode()
     href = f'<a href="data:application/octet-stream;base64,{b64}" download="analyse_contrat.pdf">📥 Télécharger l’analyse IA (PDF)</a>'
     st.markdown(href, unsafe_allow_html=True)
