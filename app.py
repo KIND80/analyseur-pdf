@@ -155,14 +155,16 @@ Voici le texte à analyser :
                 note += 1
             if any(word in text.lower() for word in ["dentaire", "fitness", "lunettes", "étranger"]):
                 note = min(7, note + 1)
-            st.markdown(
-            f"<div style='background-color:#f9f9f9;border-left: 5px solid #1abc9c;padding: 1em;margin-top: 1em;'>"
-            f"<strong>🧮 Note globale de couverture santé :</strong> <span style='font-size: 1.4em;'>{note}/10</span><br>"
-            "<em>6/10 est recommandé pour une couverture équilibrée incluant base + complémentaire + hospitalisation.</em><br>"
-            f"{'🔴 Couverture insuffisante : vous n’avez que le minimum légal.' if note <= 3 else ('🟠 Couverture moyenne : vous êtes protégé partiellement, mais des options sont à envisager.' if note <= 5 else '🟢 Bonne couverture : vous disposez d’une assurance santé équilibrée.')}"
-            "</div>",
-            unsafe_allow_html=True
-        )
+            st.markdown(f"""
+<div style='background-color:#f4f4f4;padding: 1.5em;border-radius: 10px;margin-top:1em;border-left: 6px solid #0052cc;'>
+    <h3 style='margin-bottom:0.5em;'>Résultat de votre couverture santé</h3>
+    <p style='font-size: 1.2em;'><strong>Note obtenue :</strong> {note}/10</p>
+    <p style='font-style: italic;'>Une note de 6/10 est recommandée pour une couverture équilibrée incluant assurance de base, complémentaire et hospitalisation.</p>
+    <p style='margin-top:1em;'>
+        {"<strong style='color:#c0392b;'>Couverture faible :</strong> vous disposez du minimum légal, pensez à compléter votre assurance." if note <= 3 else ("<strong style='color:#f39c12;'>Couverture moyenne :</strong> vous êtes partiellement protégé, certaines options peuvent être envisagées." if note <= 5 else "<strong style='color:#27ae60;'>Bonne couverture :</strong> vous bénéficiez d’une assurance santé équilibrée.")}
+    </p>
+</div>
+""", unsafe_allow_html=True)
             if "doublon" in analyse.lower():
                 st.error("🚨 Doublon détecté entre plusieurs assurances complémentaires ou polices. Cela signifie que certaines garanties similaires (ex : dentaire, hospitalisation) sont peut-être présentes dans plus d'une complémentaire. Vérifiez pour éviter de payer deux fois.")
             else:
