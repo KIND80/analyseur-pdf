@@ -153,10 +153,8 @@ if uploaded_files:
 
     st.success("🎉 Votre analyse est terminée ! N’hésitez pas à nous contacter si vous souhaitez un conseil personnalisé.")
 
-    # (Supprimé temporairement : téléchargement PDF désactivé pour éviter bug f-string)
-    b64 = base64.b64encode(buffer.getvalue()).decode()
-    href = f'<a href="data:application/octet-stream;base64,{b64}" download="analyse_contrat.pdf">📥 Télécharger l’analyse IA (PDF)</a>'
-    st.markdown(href, unsafe_allow_html=True)
+    # Téléchargement désactivé car 'buffer.getvalue()' n'est pas défini ici sans PDF généré.
+# Pour réintégrer cette partie, il faut générer le PDF avec FPDF comme avant (sans erreur f-string).
 
     # Formulaire de contact intégré
     st.markdown("""
@@ -173,10 +171,10 @@ if uploaded_files:
         contact_msg["Subject"] = "Demande contact depuis app IA"
         contact_msg["From"] = email
         contact_msg["To"] = "info@monfideleconseiller.ch"
-        contact_msg.set_content(f"Nom: {nom}
+        contact_msg.set_content(f"""Nom: {nom}
 Email: {email}
 Message:
-{message}")
+{message}""")
         try:
             with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
                 smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
