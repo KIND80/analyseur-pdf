@@ -111,7 +111,7 @@ if uploaded_files:
         contract_texts.append(text)
 
         with st.spinner("🔍 Analyse intelligente du contrat en cours..."):
-        st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
+            st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
         prompt = f"Tu es un conseiller expert. Explique ce contrat d'assurance santé ci-dessous avec des mots simples, identifie les points clés, les doublons, et propose des recommandations personnalisées.\n\n{text[:3000]}"
         try:
             response = client.chat.completions.create(
@@ -146,9 +146,9 @@ if uploaded_files:
         st.markdown(f"**Contrat {i+1}**")
         scores = calculer_score_utilisateur(texte, user_objective)
         best = scores[0][0]
-        raison = """Cette recommandation est basée sur les garanties détectées dans le contrat (ex : soins dentaires, hospitalisation, médecine alternative, etc.) et selon votre objectif (coût ou prestations)."""
-st.success(f"🏆 Recommandation : **{best}** semble le plus adapté à votre profil.")
-st.caption(raison)
+                raison = """Cette recommandation est basée sur les garanties détectées dans le contrat (ex : soins dentaires, hospitalisation, médecine alternative, etc.) et selon votre objectif (coût ou prestations)."""
+        st.success(f"🏆 Recommandation : **{best}** semble le plus adapté à votre profil.")
+        st.caption(raison)
         for nom, s in scores:
             st.markdown(f"{nom} :")
             st.progress(s / 10)
