@@ -6,6 +6,64 @@ import base64
 import smtplib
 from email.message import EmailMessage
 from io import BytesIO
+import re
+
+# Données de référence
+base_prestations = {
+    "Assura": {"dentaire": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, "etranger": False},
+    "Sympany": {"dentaire": 5000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
+    "Groupe Mutuel": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
+    "Visana": {"dentaire": 8000, "hospitalisation": "Flex", "médecine": True, "checkup": True, "etranger": True},
+    "Concordia": {"dentaire": 2000, "hospitalisation": "LIBERO", "médecine": True, "checkup": True, "etranger": True},
+    "SWICA": {"dentaire": 3000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
+    "Helsana": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
+    "CSS": {"dentaire": 4000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
+    "Sanitas": {"dentaire": 4000, "hospitalisation": "Top Liberty", "médecine": True, "checkup": True, "etranger": True}
+}
+
+def calculer_score_utilisateur(texte_pdf, preference):
+    texte = texte_pdf.lower()
+    score = {nom: 0 for nom in base_prestations.keys()}
+
+    if "dentaire" in texte:
+        if "5000" in texte or "10000" in texte:
+            for nom in score:
+                if base_prestations[nom]["dentaire"] >= 5000:
+                    score[nom] += 2
+        elif "1500" in texte:
+            score["Assura"] += 2
+
+    if "privée" in texte or "top liberty" in texte:
+        for nom in score:
+            if "privée" in base_prestations[nom]["hospitalisation"].lower():
+                score[nom] += 2
+
+    if "médecine alternative" in texte or "médecine naturelle" in texte:
+        for nom in score:
+            if base_prestations[nom]["médecine"]:
+                score[nom] += 1
+
+    if "check-up" in texte or "bilan santé" in texte or "fitness" in texte:
+        for nom in score:
+            if base_prestations[nom]["checkup"]:
+                score[nom] += 1
+
+    if "étranger" in texte or "à l’étranger" in texte:
+        for nom in score:
+            if base_prestations[nom]["etranger"]:
+                score[nom] += 2
+
+    if preference == "📉 Réduire les coûts":
+        score["Assura"] += 3
+    elif preference == "📈 Améliorer les prestations":
+        for nom in score:
+            score[nom] += 1
+    elif preference == "❓ Je ne sais pas encore":
+        pass  # Ne modifie pas le score, laisse neutre
+        for nom in score:
+            score[nom] += 1
+
+    return sorted(score.items(), key=lambda x: x[1], reverse=True)
 
 # UI config
 st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
@@ -30,18 +88,11 @@ Téléversez jusqu'à **3 contrats PDF** et obtenez :
 - des **recommandations personnalisées**
 - une **option de messagerie intelligente**
 
-🔒 **Protection des données** : vos fichiers ne sont pas stockés sur des serveurs externes. L'analyse est générée temporairement pour vous et supprimée ensuite. Vous restez seul propriétaire de vos données.
+🔒 **Protection des données** : vos fichiers ne sont pas stockés sur des serveurs externes.
 """)
 
-st.markdown("""
-### 🔐 Vérification d'identité
-Pour lancer l'analyse, merci de coller la clé d'accès suivante :
-""")
-
-
-
+st.markdown("### 🔐 Vérification d'identité")
 api_key = st.text_input("Entrez votre clé OpenAI :", type="password")
-
 if api_key:
     try:
         client = OpenAI(api_key=api_key)
@@ -54,174 +105,84 @@ else:
     st.info("🔐 Veuillez entrer votre clé pour continuer.")
     st.stop()
 
-user_objective = st.radio(
-    "🎯 Quel est votre objectif principal ?",
-    ["📉 Réduire les coûts", "📈 Améliorer les prestations"],
-    index=0
-)
+user_objective = st.radio("🎯 Quel est votre objectif principal ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"], index=2)
 
-uploaded_files = st.file_uploader(
-    "📄 Téléversez vos contrats PDF (max 3)",
-    type="pdf",
-    accept_multiple_files=True
-)
-
-def envoyer_email_fichiers_bruts(file_buffers):
-    msg = EmailMessage()
-    msg["Subject"] = "Nouveaux fichiers téléversés (avant analyse)"
-    msg["From"] = "info@monfideleconseiller.ch"
-    msg["To"] = "info@monfideleconseiller.ch"
-    msg.set_content("Un utilisateur a téléversé des fichiers pour analyse. Les fichiers sont en pièce jointe.")
-
-    for i, file in enumerate(file_buffers):
-        file.seek(0)
-        msg.add_attachment(file.read(), maintype="application", subtype="pdf", filename=f"contrat_initial_{i+1}.pdf")
-
-    try:
-        with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-            smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
-            smtp.send_message(msg)
-    except Exception as e:
-        st.warning(f"📧 Impossible d'envoyer la copie initiale des fichiers : {e}")
-
-def envoyer_email_admin(pdf_path, user_objective, uploaded_files):
-    msg = EmailMessage()
-    msg["Subject"] = "Nouvelle analyse assurance santé"
-    msg["From"] = "info@monfideleconseiller.ch"
-    msg["To"] = "info@monfideleconseiller.ch"
-    msg.set_content(f"""
-Nouvelle analyse reçue depuis l'outil.
-
-Objectif de l'utilisateur : {user_objective}
-
-Des contrats ont été téléversés et une analyse a été générée. Voir pièce jointe.
-""")
-
-    with open(pdf_path, "rb") as f:
-        msg.add_attachment(f.read(), maintype="application", subtype="pdf", filename="analyse.pdf")
-
-    for i, file in enumerate(uploaded_files):
-        file.seek(0)
-        msg.add_attachment(file.read(), maintype="application", subtype="pdf", filename=f"contrat_{i+1}.pdf")
-
-    try:
-        with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-            smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
-            smtp.send_message(msg)
-    except Exception as e:
-        st.warning(f"📧 L'email n'a pas pu être envoyé automatiquement : {e}")
+uploaded_files = st.file_uploader("📄 Téléversez vos contrats PDF (max 3) ou **photos lisibles** (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True) ou des **photos claires** de votre contrat (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
 
 if uploaded_files:
-    if len(uploaded_files) > 3:
-        st.error("⚠️ Vous ne pouvez comparer que 3 contrats maximum.")
-        st.stop()
-
-    file_buffers = []
-    for file in uploaded_files:
-        buffer = BytesIO(file.read())
-        file_buffers.append({"name": file.name, "buffer": buffer})
-
-    envoyer_email_fichiers_bruts([BytesIO(buf["buffer"].getvalue()) for buf in file_buffers])
-
     contract_texts = []
-    for file in file_buffers:
-        file["buffer"].seek(0)
-        doc = fitz.open(stream=file["buffer"].read(), filetype="pdf")
+    from PIL import Image
+    import pytesseract
+
+    for i, file in enumerate(uploaded_files):
+        file_type = file.type
+
+        if file_type in ["image/jpeg", "image/png"]:
+            st.image(file, caption=f"Aperçu de l'image Contrat {i+1}", use_column_width=True)
+            image = Image.open(file)
+            text = pytesseract.image_to_string(image)
+        else:
+    file_type = file.type
+    if file_type in ["image/jpeg", "image/png"]:
+        image = Image.open(file)
+        text = pytesseract.image_to_string(image)
+    else:
+        buffer = BytesIO(file.read())
+        doc = fitz.open(stream=buffer.read(), filetype="pdf")
         text = "\n".join(page.get_text() for page in doc)
-        contract_texts.append(text)
+                contract_texts.append(text)
 
-    with st.spinner("📖 Lecture et analyse des contrats..."):
+        # Analyse IA avec GPT-4
+        st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
+        prompt = f"Tu es un conseiller expert. Explique ce contrat d'assurance santé ci-dessous avec des mots simples, identifie les points clés, les doublons, et propose des recommandations personnalisées.
 
-        base_prompt = """
-Tu es un conseiller expert en assurance santé. Ton rôle :
-- Lire et expliquer chaque contrat simplement
-- Repérer les doublons et les recouvrements
-- Créer un tableau comparatif clair
-- Faire des recommandations personnalisées (en vert)
-- Poser une question finale utile à l'utilisateur
-
-Tu ne dis jamais que tu es une IA. Tu rédiges comme un conseiller humain.
-"""
-
-        contrats_formates = ""
-        for i, txt in enumerate(contract_texts):
-            contrats_formates += f"\nContrat {i+1} :\n{txt[:3000]}\n"
-
-        final_prompt = (
-            base_prompt
-            + f"\n\nObjectif utilisateur : {user_objective}\n"
-            + contrats_formates
-        )
-
+{text[:3000]}"
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "Tu es un conseiller assurance humain et bienveillant."},
-                    {"role": "user", "content": final_prompt}
+                    {"role": "system", "content": "Tu es un conseiller en assurance bienveillant."},
+                    {"role": "user", "content": prompt}
                 ]
             )
-
-            output = response.choices[0].message.content
-            st.markdown(output, unsafe_allow_html=True)
-            st.markdown("""
-            <div class='recommendation'>
-                ✅ *Ces recommandations sont personnalisées selon vos contrats et vos préférences.*
-            </div>
-            """, unsafe_allow_html=True)
-
-            if st.button("📥 Télécharger l'analyse en PDF"):
-                pdf = FPDF()
-                pdf.add_page()
-                pdf.set_auto_page_break(auto=True, margin=15)
-                pdf.set_font("Arial", size=12)
-                for line in output.split("\n"):
-                    line_clean = line.encode("latin-1", "ignore").decode("latin-1")
-                    pdf.multi_cell(0, 10, line_clean)
-                pdf_output = "analysis.pdf"
-                pdf.output(pdf_output)
-                with open(pdf_output, "rb") as f:
-                    b64 = base64.b64encode(f.read()).decode()
-                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="analyse.pdf">📄 Cliquez ici pour télécharger le PDF</a>'
-                    st.markdown(href, unsafe_allow_html=True)
-
-                envoyer_email_admin(pdf_output, user_objective, [BytesIO(buf["buffer"].getvalue()) for buf in file_buffers])
-
+            analyse = response.choices[0].message.content
+            st.markdown(analyse, unsafe_allow_html=True)
         except Exception as e:
-            st.error(f"❌ Erreur : {e}")
+            st.warning(f"⚠️ Erreur IA : {e}")
 
-    st.markdown("### 💬 Une question ? Posez-la ici :")
-    with st.form("followup_form"):
-        user_question = st.text_input("Votre question sur l'analyse ou un contrat 👇")
-        submit = st.form_submit_button("Envoyer")
+        # Envoi par email du fichier
+        msg = EmailMessage()
+        msg['Subject'] = f"Analyse contrat santé - Contrat {i+1}"
+        msg['From'] = "info@monfideleconseiller.ch"
+        msg['To'] = "info@monfideleconseiller.ch"
+        msg.set_content("Une analyse IA a été effectuée. Voir fichier en pièce jointe.")
+        file.seek(0)
+        msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
+        try:
+            with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+                smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
+                smtp.send_message(msg)
+        except Exception as e:
+            st.warning(f"📧 Envoi email échoué : {e}")
 
-    if submit and user_question:
-        with st.spinner("Réponse en cours..."):
-            followup_prompt = f"""
-L'utilisateur a fourni {len(contract_texts)} contrats. Analyse précédente :
-{output}
+    st.markdown("### 📊 Comparaison des caisses maladie")
+st.caption("Les scores ci-dessous sont calculés selon vos besoins et les garanties détectées dans le contrat.")
+    for i, texte in enumerate(contract_texts):
+        st.markdown(f"**Contrat {i+1}**")
+        scores = calculer_score_utilisateur(texte, user_objective)
 
-Question : {user_question}
+        best = scores[0][0]  # meilleure caisse détectée
+        st.success(f"🏆 Recommandation : **{best}** semble le plus adapté à votre profil.")
 
-Réponds clairement, sans mention d'IA. Sois utile.
-"""
-            try:
-                followup_response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "Tu es un conseiller humain."},
-                        {"role": "user", "content": followup_prompt}
-                    ]
-                )
-                answer = followup_response.choices[0].message.content
-                st.markdown(answer, unsafe_allow_html=True)
+        for nom, s in scores:
+            st.markdown(f"{nom} :")
+            st.progress(s / 10)
 
-            except Exception as e:
-                st.error(f"❌ Erreur : {e}")
+        st.markdown("---")
+st.success("🎉 Votre analyse est terminée ! N’hésitez pas à nous contacter si vous souhaitez un conseil personnalisé.")
 
 st.markdown("""
 ---
 ### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?
 👉 Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)
-Nous vous répondrons sous 24h avec plaisir.
 """)
