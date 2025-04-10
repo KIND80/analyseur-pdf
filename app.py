@@ -11,7 +11,10 @@ import pytesseract
 import re
 
 # Données de référence
+# 💡 Ces données pourraient être croisées avec des comparateurs comme comparis.ch ou mes-complementaires.ch pour enrichir l'analyse (prix, franchises, modèles alternatifs, etc.)
 base_prestations = {
+    # Données tarifaires indicatives (CHF/mois) — à enrichir
+    "Assura": {"tarif": 250, "franchise": 2500, "mode": "standard",
     "Assura": {"dentaire": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, "etranger": False},
     "Sympany": {"dentaire": 5000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Groupe Mutuel": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
@@ -20,7 +23,7 @@ base_prestations = {
     "SWICA": {"dentaire": 3000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Helsana": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "CSS": {"dentaire": 4000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
-    "Sanitas": {"dentaire": 4000, "hospitalisation": "Top Liberty", "médecine": True, "checkup": True, "etranger": True}
+    "Sanitas": {"dentaire": 4000, "hospitalisation": "Top Liberty", "médecine": True, "checkup": True, "etranger": True, "tarif": 390, "franchise": 300, "mode": "modèle HMO"}
 }
 
 def calculer_score_utilisateur(texte_pdf, preference):
@@ -112,7 +115,21 @@ if uploaded_files:
 
         with st.spinner("🔍 Analyse intelligente du contrat en cours..."):
             st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
-        prompt = f"Tu es un conseiller expert. Explique ce contrat d'assurance santé ci-dessous avec des mots simples, identifie les points clés, les doublons, et propose des recommandations personnalisées.\n\n{text[:3000]}"
+        prompt = f"Tu es un conseiller expert en assurance santé. Analyse ce contrat en trois parties distinctes :
+
+1. **LAMal (assurance de base obligatoire)** : quelles couvertures essentielles sont présentes ?
+2. **LCA (assurance complémentaire)** : quelles options ou prestations supplémentaires sont incluses ?
+3. **Hospitalisation** : type d'hébergement, libre choix de l'établissement, prestations proposées.
+
+Pour chaque section :
+- Donne une explication simple
+- Reprends les éléments importants
+- Identifie les limites ou doublons
+- Fais une recommandation claire basée sur le contrat et les besoins exprimés
+
+Voici le texte à analyser :
+
+{text[:3000]}"
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
@@ -141,6 +158,23 @@ if uploaded_files:
             st.warning(f"📧 Envoi email échoué : {e}")
 
     st.markdown("### 📊 Comparaison des caisses maladie")
+    st.markdown("#### 🧾 Tableau comparatif des prestations")
+    import pandas as pd
+    df_prestations = pd.DataFrame(base_prestations).T
+    df_prestations = df_prestations.rename(columns={
+        "dentaire": "Remb. dentaire (CHF)",
+        "hospitalisation": "Type hospitalisation",
+        "médecine": "Médecine alternative",
+        "checkup": "Check-up / Bilan",
+        "etranger": "Couverture à l'étranger",
+        "tarif": "Tarif mensuel (CHF)",
+        "franchise": "Franchise (CHF)",
+        "mode": "Modèle d'assurance"
+    })
+    df_prestations["Médecine alternative"] = df_prestations["Médecine alternative"].replace({True: "✅", False: "❌"})
+    df_prestations["Check-up / Bilan"] = df_prestations["Check-up / Bilan"].replace({True: "✅", False: "❌"})
+    df_prestations["Couverture à l'étranger"] = df_prestations["Couverture à l'étranger"].replace({True: "✅", False: "❌"})
+    st.dataframe(df_prestations.style.set_properties(**{'text-align': 'center'}))
     st.caption("Les scores ci-dessous sont calculés selon vos besoins et les garanties détectées.")
     for i, texte in enumerate(contract_texts):
         st.markdown(f"**Contrat {i+1}**")
