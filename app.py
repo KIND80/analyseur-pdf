@@ -163,7 +163,6 @@ Voici le texte à analyser :
             "</div>",
             unsafe_allow_html=True
         )
-            """, unsafe_allow_html=True)
             if "doublon" in analyse.lower():
                 st.error("🚨 Doublon détecté entre plusieurs assurances complémentaires ou polices. Cela signifie que certaines garanties similaires (ex : dentaire, hospitalisation) sont peut-être présentes dans plus d'une complémentaire. Vérifiez pour éviter de payer deux fois.")
             else:
@@ -228,4 +227,4 @@ Voici le texte à analyser :
 
 st.markdown("---")
 st.markdown("### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?")
-st.markdown("Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)") 
+st.markdown("Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)")
