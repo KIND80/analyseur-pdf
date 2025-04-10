@@ -110,6 +110,7 @@ if uploaded_files:
 
         contract_texts.append(text)
 
+        with st.spinner("🔍 Analyse intelligente du contrat en cours..."):
         st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
         prompt = f"Tu es un conseiller expert. Explique ce contrat d'assurance santé ci-dessous avec des mots simples, identifie les points clés, les doublons, et propose des recommandations personnalisées.\n\n{text[:3000]}"
         try:
@@ -145,7 +146,9 @@ if uploaded_files:
         st.markdown(f"**Contrat {i+1}**")
         scores = calculer_score_utilisateur(texte, user_objective)
         best = scores[0][0]
-        st.success(f"🏆 Recommandation : **{best}** semble le plus adapté à votre profil.")
+        raison = """Cette recommandation est basée sur les garanties détectées dans le contrat (ex : soins dentaires, hospitalisation, médecine alternative, etc.) et selon votre objectif (coût ou prestations)."""
+st.success(f"🏆 Recommandation : **{best}** semble le plus adapté à votre profil.")
+st.caption(raison)
         for nom, s in scores:
             st.markdown(f"{nom} :")
             st.progress(s / 10)
@@ -159,29 +162,25 @@ if uploaded_files:
     # Formulaire de contact intégré
     st.markdown("""
     ---
-    ### 📞 Demande de contact personnalisée
-    Vous souhaitez qu’on vous rappelle ou qu’on vous aide à changer de caisse ?
-    Remplissez ce mini formulaire :
-    """)
-    nom = st.text_input("Nom")
-    email = st.text_input("Email")
-    message = st.text_area("Votre message")
-    if st.button("Envoyer la demande"):
-        contact_msg = EmailMessage()
-        contact_msg["Subject"] = "Demande contact depuis app IA"
-        contact_msg["From"] = email
-        contact_msg["To"] = "info@monfideleconseiller.ch"
-        contact_msg.set_content(f"""Nom: {nom}
-Email: {email}
-Message:
-{message}""")
-        try:
-            with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-                smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
-                smtp.send_message(contact_msg)
-            st.success("📩 Votre message a été envoyé avec succès.")
-        except Exception as e:
-            st.error(f"Erreur d'envoi : {e}")
+    ### 💬 Posez une question sur votre contrat
+    Vous pouvez poser une question librement à propos de votre contrat, de l'analyse, ou demander une explication complémentaire :
+    question_utilisateur = st.text_area("✍️ Votre question ici")
+    if st.button("Obtenir une réponse"):
+        if question_utilisateur:
+            try:
+                reponse = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "Tu es un conseiller expert en assurance santé, clair et bienveillant."},
+                        {"role": "user", "content": question_utilisateur}
+                    ]
+                )
+                st.markdown("### 🤖 Réponse de l'assistant :")
+                st.markdown(reponse.choices[0].message.content, unsafe_allow_html=True)
+            except Exception as e:
+                st.error("❌ Une erreur est survenue lors de la réponse IA.")
+        else:
+            st.warning("Veuillez saisir une question avant de cliquer.")
 
 st.markdown("""
 ---
