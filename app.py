@@ -140,7 +140,11 @@ Voici le texte à analyser :
             )
             analyse = response.choices[0].message.content
                         st.markdown("<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;margin-top:1em;'>", unsafe_allow_html=True)
-            st.markdown(analyse, unsafe_allow_html=True)
+                        st.markdown(analyse, unsafe_allow_html=True)
+            if "doublon" in analyse.lower():
+                st.error("🚨 Doublon détecté dans le contrat ! Pensez à vérifier les garanties similaires dans plusieurs assurances.")
+            else:
+                st.success("✅ Aucun doublon détecté dans ce contrat.")
             st.markdown("</div>", unsafe_allow_html=True)
         except Exception as e:
             st.warning(f"⚠️ Erreur IA : {e}")
