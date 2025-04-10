@@ -139,14 +139,7 @@ Voici le texte à analyser :
                 ]
             )
             analyse = response.choices[0].message.content
-            st.markdown("<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;margin-top:1em;'>", unsafe_allow_html=True)
-                        # Mise en forme avec lignes de séparation colorées
-            for section in ["LAMal", "LCA", "Hospitalisation"]:
-                if section.lower() in analyse.lower():
-                    st.markdown(f"<div style='height: 4px; background-color: #007BFF; border-radius: 2px; margin: 1em 0;'></div>", unsafe_allow_html=True)
-            # Affichage brut sans coloration des sections — version stable
             st.markdown(analyse, unsafe_allow_html=True)
-            st.markdown(colored_analysis, unsafe_allow_html=True)
             if "doublon" in analyse.lower():
                 st.error("🚨 Doublon détecté dans ce contrat ! Cela signifie que certaines garanties (ex : dentaire, hospitalisation) apparaissent dans plusieurs produits (LAMal + LCA). Vérifiez si vous payez deux fois pour la même chose.")
             else:
@@ -169,38 +162,20 @@ Voici le texte à analyser :
         except Exception as e:
             st.warning(f"📧 Envoi email échoué : {e}")
 
-    st.markdown("### 📊 Comparaison des caisses maladie")
-    st.markdown("#### 🧾 Tableau comparatif des prestations")
-    import pandas as pd
-    df_prestations = pd.DataFrame(base_prestations).T
-    df_prestations = df_prestations.rename(columns={
-        "dentaire": "Remb. dentaire (CHF)",
-        "hospitalisation": "Type hospitalisation",
-        "médecine": "Médecine alternative",
-        "checkup": "Check-up / Bilan",
-        "etranger": "Couverture à l'étranger",
-        "tarif": "Tarif mensuel (CHF)",
-        "franchise": "Franchise (CHF)",
-        "mode": "Modèle d'assurance"
-    })
-    df_prestations["Médecine alternative"] = df_prestations["Médecine alternative"].replace({True: "✅", False: "❌"})
-    df_prestations["Check-up / Bilan"] = df_prestations["Check-up / Bilan"].replace({True: "✅", False: "❌"})
-    df_prestations["Couverture à l'étranger"] = df_prestations["Couverture à l'étranger"].replace({True: "✅", False: "❌"})
-    st.dataframe(df_prestations.style.set_properties(**{'text-align': 'center'}))
-    st.caption("Les scores ci-dessous sont calculés selon vos besoins et les garanties détectées.")
-    for i, texte in enumerate(contract_texts):
-        st.markdown(f"**Contrat {i+1}**")
-        scores = calculer_score_utilisateur(texte, user_objective)
-        best = scores[0][0]
-        raison = "Cette recommandation est basée sur les garanties détectées dans le contrat (ex : soins dentaires, hospitalisation, médecine alternative, etc.) et selon votre objectif (coût ou prestations)."
-        st.success(f"🏆 Recommandation : **{best}** semble le plus adapté à votre profil.")
-        st.caption(raison)
-        for nom, s in scores:
-            st.markdown(f"{nom} :")
-            st.progress(s / 10)
-        st.markdown("---")
+    
 
-    st.success("🎉 Votre analyse est terminée ! N’hésitez pas à nous contacter si vous souhaitez un conseil personnalisé.")
+    st.markdown("""
+<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;'>
+<h4>✅ Analyse terminée avec succès !</h4>
+<p>Vous venez de recevoir une explication claire de votre contrat d’assurance santé, basée sur l’IA. Voici ce que vous pouvez faire maintenant :</p>
+<ul>
+  <li>📬 Consulter les détails de l’analyse ci-dessus</li>
+  <li>🤔 Poser une question complémentaire à l’assistant IA</li>
+  <li>📈 Demander une recommandation ou un accompagnement personnalisé</li>
+</ul>
+<p>Nous restons à votre disposition pour toute aide complémentaire.</p>
+</div>
+""", unsafe_allow_html=True)
 
     # Téléchargement désactivé car 'buffer.getvalue()' n'est pas défini ici sans PDF généré.
 # Pour réintégrer cette partie, il faut générer le PDF avec FPDF comme avant (sans erreur f-string).
