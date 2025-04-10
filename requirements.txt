@@ -1,4 +1,6 @@
-streamlit
-PyMuPDF
-openai>=1.0.0
-fpdf
+streamlit>=1.30
+openai>=1.10
+PyMuPDF>=1.23
+fpdf>=1.7
+pytesseract>=0.3
+pillow>=9.0
