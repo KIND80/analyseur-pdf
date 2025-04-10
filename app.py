@@ -190,12 +190,12 @@ Voici le texte à analyser :
 
     st.markdown(
     "<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;'>"
-    "<h4>Analyse terminée avec succès ✅</h4>"
+    "<h4>Analyse terminée avec succès</h4>"
     "<p>Vous venez de recevoir une explication claire de votre contrat d’assurance santé, basée sur l’IA. Voici ce que vous pouvez faire maintenant :</p>"
     "<ul>"
-    "<li>📬 Consulter les détails de l’analyse ci-dessus</li>"
-    "<li>🤔 Poser une question complémentaire à l’assistant IA</li>"
-    "<li>📈 Demander une recommandation ou un accompagnement personnalisé</li>"
+    "<li>Consulter les détails de l’analyse ci-dessus</li>"
+    "<li>Poser une question complémentaire à l’assistant IA</li>"
+    "<li>Demander une recommandation ou un accompagnement personnalisé</li>"
     "</ul>"
     "<p>Nous restons à votre disposition pour toute aide complémentaire.</p>"
     "</div>",
@@ -226,8 +226,8 @@ Voici le texte à analyser :
         else:
             st.warning("Veuillez saisir une question avant de cliquer.")
 
-st.markdown("""
----
-### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?
+st.markdown("---")
+st.markdown("### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?")
+st.markdown("Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)") ou l'intelligence qui l'alimente ?
 Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)
 """)
