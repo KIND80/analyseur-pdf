@@ -93,6 +93,10 @@ else:
 
 user_objective = st.radio("🎯 Quel est votre objectif principal ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"], index=2)
 
+st.markdown("### 👤 Situation personnelle")
+travail = st.radio("Travaillez-vous au moins 8h par semaine ?", ["Oui", "Non"], index=0)
+st.markdown("ℹ️ Cela permet de savoir si la couverture accident doit être incluse dans la LAMal.")
+
 uploaded_files = st.file_uploader("📄 Téléversez vos contrats PDF ou photos (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -123,11 +127,15 @@ if uploaded_files:
 
 Pour chaque section :
 - Donne une explication simple
+
+Si aucun élément de LCA n'est détecté dans le contrat, précise que l’utilisateur n’a probablement qu’une assurance de base LAMal. Explique que cela est légalement suffisant mais peu couvrant : par exemple, la LAMal rembourse l’ambulance partiellement (jusqu’à 500 CHF/an), ne couvre pas la chambre privée, ni les médecines alternatives. Conseille d’envisager une LCA adaptée selon ses besoins.
 - Liste les garanties et montants associés si disponibles
 - Identifie les limites ou doublons
 - Fais une recommandation claire adaptée au besoin utilisateur
 
 Voici le texte à analyser :
+
+À la fin de l'analyse, indique une note globale de la couverture santé sur 10 (ex : 6/10 minimum recommandé pour LAMal + LCA + Hospitalisation).
 
 {text[:3000]}"""
         try:
@@ -140,6 +148,20 @@ Voici le texte à analyser :
             )
             analyse = response.choices[0].message.content
             st.markdown(analyse, unsafe_allow_html=True)
+            note = 2  # LAMal par défaut
+            if any(word in text.lower() for word in ["complémentaire", "lca"]):
+                note += 3
+            if any(word in text.lower() for word in ["hospitalisation", "privée", "mi-privée"]):
+                note += 1
+            if any(word in text.lower() for word in ["dentaire", "fitness", "lunettes", "étranger"]):
+                note = min(7, note + 1)
+            st.markdown(f"""
+            <div style='background-color:#f9f9f9;border-left: 5px solid #1abc9c;padding: 1em;margin-top: 1em;'>
+            <strong>🧮 Note globale de couverture santé :</strong> <span style='font-size: 1.4em;'>{note}/10</span><br>
+            <em>6/10 est recommandé pour une couverture équilibrée incluant base + complémentaire + hospitalisation.</em><br>
+            {"🔴 Couverture insuffisante : vous n'avez que le minimum légal." if note <= 3 else ("🟠 Couverture moyenne : vous êtes protégé partiellement, mais des options sont à envisager." if note <= 5 else "🟢 Bonne couverture : vous disposez d'une assurance santé équilibrée.")}
+            </div>""", unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
             if "doublon" in analyse.lower():
                 st.error("🚨 Doublon détecté entre plusieurs assurances complémentaires ou polices. Cela signifie que certaines garanties similaires (ex : dentaire, hospitalisation) sont peut-être présentes dans plus d'une complémentaire. Vérifiez pour éviter de payer deux fois.")
             else:
