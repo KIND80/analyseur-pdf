@@ -144,9 +144,21 @@ Voici le texte à analyser :
             for section in ["LAMal", "LCA", "Hospitalisation"]:
                 if section.lower() in analyse.lower():
                     st.markdown(f"<div style='height: 4px; background-color: #007BFF; border-radius: 2px; margin: 1em 0;'></div>", unsafe_allow_html=True)
-            st.markdown(analyse, unsafe_allow_html=True)
+            # Mise en forme colorée des sections LAMal / LCA / Hospitalisation
+            colored_analysis = analyse
+            colored_analysis = re.sub(r"(1\.\s\*\*LAMal.*?)\n", r"<div style='background-color:#e6f0ff;padding:1em;border-radius:10px;'>
+\1
+", colored_analysis, flags=re.DOTALL)
+            colored_analysis = re.sub(r"(2\.\s\*\*LCA.*?)\n", r"</div><div style='background-color:#e9fbe9;padding:1em;border-radius:10px;'>
+\1
+", colored_analysis, flags=re.DOTALL)
+            colored_analysis = re.sub(r"(3\.\s\*\*Hospitalisation.*?)\n", r"</div><div style='background-color:#ffeaea;padding:1em;border-radius:10px;'>
+\1
+", colored_analysis, flags=re.DOTALL)
+            colored_analysis += "</div>"
+            st.markdown(colored_analysis, unsafe_allow_html=True)
             if "doublon" in analyse.lower():
-                st.error("🚨 Doublon détecté dans le contrat ! Pensez à vérifier les garanties similaires dans plusieurs assurances.")
+                st.error("🚨 Doublon détecté dans ce contrat ! Cela signifie que certaines garanties (ex : dentaire, hospitalisation) apparaissent dans plusieurs produits (LAMal + LCA). Vérifiez si vous payez deux fois pour la même chose.")
             else:
                 st.success("✅ Aucun doublon détecté dans ce contrat.")
             st.markdown("</div>", unsafe_allow_html=True)
