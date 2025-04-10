@@ -139,7 +139,7 @@ Voici le texte à analyser :
                 ]
             )
             analyse = response.choices[0].message.content
-                        st.markdown("<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;margin-top:1em;'>", unsafe_allow_html=True)
+            st.markdown("<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;margin-top:1em;'>", unsafe_allow_html=True);padding:1em;border-radius:10px;margin-top:1em;'>", unsafe_allow_html=True)
                         st.markdown(analyse, unsafe_allow_html=True)
             if "doublon" in analyse.lower():
                 st.error("🚨 Doublon détecté dans le contrat ! Pensez à vérifier les garanties similaires dans plusieurs assurances.")
