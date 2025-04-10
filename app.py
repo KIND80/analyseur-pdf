@@ -228,6 +228,4 @@ Voici le texte à analyser :
 
 st.markdown("---")
 st.markdown("### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?")
-st.markdown("Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)") ou l'intelligence qui l'alimente ?
-Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)
-""")
+st.markdown("Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)") 
