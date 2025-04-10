@@ -146,7 +146,7 @@ if uploaded_files:
         st.markdown(f"**Contrat {i+1}**")
         scores = calculer_score_utilisateur(texte, user_objective)
         best = scores[0][0]
-                raison = """Cette recommandation est basée sur les garanties détectées dans le contrat (ex : soins dentaires, hospitalisation, médecine alternative, etc.) et selon votre objectif (coût ou prestations)."""
+        raison = "Cette recommandation est basée sur les garanties détectées dans le contrat (ex : soins dentaires, hospitalisation, médecine alternative, etc.) et selon votre objectif (coût ou prestations)."
         st.success(f"🏆 Recommandation : **{best}** semble le plus adapté à votre profil.")
         st.caption(raison)
         for nom, s in scores:
@@ -159,11 +159,9 @@ if uploaded_files:
     # Téléchargement désactivé car 'buffer.getvalue()' n'est pas défini ici sans PDF généré.
 # Pour réintégrer cette partie, il faut générer le PDF avec FPDF comme avant (sans erreur f-string).
 
-    # Formulaire de contact intégré
-    st.markdown("""
-    ---
-    ### 💬 Posez une question sur votre contrat
-    Vous pouvez poser une question librement à propos de votre contrat, de l'analyse, ou demander une explication complémentaire :
+    # Chat interactif intégré
+    st.markdown("---")
+    st.markdown("### 💬 Posez une question à notre assistant IA")
     question_utilisateur = st.text_area("✍️ Votre question ici")
     if st.button("Obtenir une réponse"):
         if question_utilisateur:
@@ -171,7 +169,7 @@ if uploaded_files:
                 reponse = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
-                        {"role": "system", "content": "Tu es un conseiller expert en assurance santé, clair et bienveillant."},
+                        {"role": "system", "content": "Tu es un conseiller expert en assurance santé, clair et bienveillant. Sois synthétique et utile."},
                         {"role": "user", "content": question_utilisateur}
                     ]
                 )
