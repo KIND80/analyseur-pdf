@@ -117,15 +117,15 @@ if uploaded_files:
         # prompt déplacé dans le bloc st.spinner
         prompt = f"""Tu es un conseiller expert en assurance santé. Analyse ce contrat en trois parties distinctes :
 
-1. **LAMal (assurance de base obligatoire)** : quelles couvertures essentielles sont présentes ?
-2. **LCA (assurance complémentaire)** : quelles options ou prestations supplémentaires sont incluses ?
-3. **Hospitalisation** : type d'hébergement, libre choix de l'établissement, prestations proposées.
+1. **LAMal (assurance de base obligatoire)** : quelles couvertures essentielles sont présentes ? Indique les montants annuels de prise en charge et les éventuelles franchises.
+2. **LCA (assurance complémentaire)** : quelles options ou prestations supplémentaires sont incluses ? Détaille les limites de remboursement (CHF/an ou par traitement) si présentes.
+3. **Hospitalisation** : type d'hébergement, libre choix de l'établissement, montant couvert par séjour ou par année.
 
 Pour chaque section :
 - Donne une explication simple
-- Reprends les éléments importants
+- Liste les garanties et montants associés si disponibles
 - Identifie les limites ou doublons
-- Fais une recommandation claire basée sur le contrat et les besoins exprimés
+- Fais une recommandation claire adaptée au besoin utilisateur
 
 Voici le texte à analyser :
 
@@ -141,7 +141,7 @@ Voici le texte à analyser :
             analyse = response.choices[0].message.content
             st.markdown(analyse, unsafe_allow_html=True)
             if "doublon" in analyse.lower():
-                st.error("🚨 Doublon détecté dans ce contrat ! Cela signifie que certaines garanties (ex : dentaire, hospitalisation) apparaissent dans plusieurs produits (LAMal + LCA). Vérifiez si vous payez deux fois pour la même chose.")
+                st.error("🚨 Doublon détecté entre plusieurs assurances complémentaires ou polices. Cela signifie que certaines garanties similaires (ex : dentaire, hospitalisation) sont peut-être présentes dans plus d'une complémentaire. Vérifiez pour éviter de payer deux fois.")
             else:
                 st.success("✅ Aucun doublon détecté dans ce contrat.")
             st.markdown("</div>", unsafe_allow_html=True)
