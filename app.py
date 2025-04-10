@@ -13,7 +13,7 @@ import re
 # Données de référence
 # 💡 Ces données pourraient être croisées avec des comparateurs comme comparis.ch ou mes-complementaires.ch pour enrichir l'analyse (prix, franchises, modèles alternatifs, etc.)
 base_prestations = {
-    "Assura": {"dentaire": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, "etranger": False, "tarif": 250, "franchise": 2500, "mode": "standard"},
+    "Assura": {"orthodontie": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, "etranger": False, "tarif": 250, "franchise": 2500, "mode": "standard"},
     "Sympany": {"dentaire": 5000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Groupe Mutuel": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Visana": {"dentaire": 8000, "hospitalisation": "Flex", "médecine": True, "checkup": True, "etranger": True},
@@ -112,7 +112,9 @@ if uploaded_files:
         contract_texts.append(text)
 
         with st.spinner("🔍 Analyse intelligente du contrat en cours..."):
-            st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
+            st.markdown("<div style='background-color:#f0f9ff;padding:1em;border-radius:10px;margin-top:1em;'>🕵️‍♂️ L’intelligence artificielle analyse maintenant votre contrat, cela peut prendre quelques instants...</div>", unsafe_allow_html=True)
+        st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
+        # prompt déplacé dans le bloc st.spinner
         prompt = f"""Tu es un conseiller expert en assurance santé. Analyse ce contrat en trois parties distinctes :
 
 1. **LAMal (assurance de base obligatoire)** : quelles couvertures essentielles sont présentes ?
@@ -137,7 +139,9 @@ Voici le texte à analyser :
                 ]
             )
             analyse = response.choices[0].message.content
+                        st.markdown("<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;margin-top:1em;'>", unsafe_allow_html=True)
             st.markdown(analyse, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
         except Exception as e:
             st.warning(f"⚠️ Erreur IA : {e}")
 
