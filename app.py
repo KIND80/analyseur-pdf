@@ -6,6 +6,8 @@ import base64
 import smtplib
 from email.message import EmailMessage
 from io import BytesIO
+from PIL import Image
+import pytesseract
 import re
 
 # Données de référence
@@ -59,36 +61,19 @@ def calculer_score_utilisateur(texte_pdf, preference):
         for nom in score:
             score[nom] += 1
     elif preference == "❓ Je ne sais pas encore":
-        pass  # Ne modifie pas le score, laisse neutre
-        for nom in score:
-            score[nom] += 1
+        pass
 
     return sorted(score.items(), key=lambda x: x[1], reverse=True)
 
 # UI config
 st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
-st.markdown("""
-<style>
-    .recommendation {
-        background-color: #d4edda;
-        border-left: 5px solid #28a745;
-        padding: 1rem;
-        margin-top: 1rem;
-        border-radius: 0.5rem;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 st.title("🤖 Votre Assistant Assurance Santé Intelligent")
-st.markdown("""
-Téléversez jusqu'à **3 contrats PDF** et obtenez :
-- une **analyse claire et simplifiée**
-- la **détection de doublons** entre contrats
-- un **tableau comparatif visuel**
-- des **recommandations personnalisées**
-- une **option de messagerie intelligente**
 
-🔒 **Protection des données** : vos fichiers ne sont pas stockés sur des serveurs externes.
+st.markdown("""
+Téléversez jusqu'à **3 contrats PDF** ou **photos de votre contrat** pour :
+- une **analyse simplifiée**
+- un **scoring automatique**
+- des **recommandations personnalisées**
 """)
 
 st.markdown("### 🔐 Vérification d'identité")
@@ -107,13 +92,10 @@ else:
 
 user_objective = st.radio("🎯 Quel est votre objectif principal ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"], index=2)
 
-uploaded_files = st.file_uploader("📄 Téléversez vos contrats PDF (max 3) ou **photos lisibles** (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True) de votre contrat (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("📄 Téléversez vos contrats PDF ou photos (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
 
 if uploaded_files:
     contract_texts = []
-    from PIL import Image
-    import pytesseract
-
     for i, file in enumerate(uploaded_files):
         file_type = file.type
 
@@ -122,21 +104,14 @@ if uploaded_files:
             image = Image.open(file)
             text = pytesseract.image_to_string(image)
         else:
-    file_type = file.type
-    if file_type in ["image/jpeg", "image/png"]:
-        image = Image.open(file)
-        text = pytesseract.image_to_string(image)
-    else:
-        buffer = BytesIO(file.read())
-        doc = fitz.open(stream=buffer.read(), filetype="pdf")
-        text = "\n".join(page.get_text() for page in doc)
-                contract_texts.append(text)
+            buffer = BytesIO(file.read())
+            doc = fitz.open(stream=buffer.read(), filetype="pdf")
+            text = "\n".join(page.get_text() for page in doc)
 
-        # Analyse IA avec GPT-4
+        contract_texts.append(text)
+
         st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
-        prompt = f"Tu es un conseiller expert. Explique ce contrat d'assurance santé ci-dessous avec des mots simples, identifie les points clés, les doublons, et propose des recommandations personnalisées.
-
-{text[:3000]}"
+        prompt = f"Tu es un conseiller expert. Explique ce contrat d'assurance santé ci-dessous avec des mots simples, identifie les points clés, les doublons, et propose des recommandations personnalisées.\n\n{text[:3000]}"
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
@@ -150,7 +125,6 @@ if uploaded_files:
         except Exception as e:
             st.warning(f"⚠️ Erreur IA : {e}")
 
-        # Envoi par email du fichier
         msg = EmailMessage()
         msg['Subject'] = f"Analyse contrat santé - Contrat {i+1}"
         msg['From'] = "info@monfideleconseiller.ch"
@@ -166,20 +140,61 @@ if uploaded_files:
             st.warning(f"📧 Envoi email échoué : {e}")
 
     st.markdown("### 📊 Comparaison des caisses maladie")
-st.caption("Les scores ci-dessous sont calculés selon vos besoins et les garanties détectées dans le contrat.")
+    st.caption("Les scores ci-dessous sont calculés selon vos besoins et les garanties détectées.")
     for i, texte in enumerate(contract_texts):
         st.markdown(f"**Contrat {i+1}**")
         scores = calculer_score_utilisateur(texte, user_objective)
-
-        best = scores[0][0]  # meilleure caisse détectée
+        best = scores[0][0]
         st.success(f"🏆 Recommandation : **{best}** semble le plus adapté à votre profil.")
-
         for nom, s in scores:
             st.markdown(f"{nom} :")
             st.progress(s / 10)
-
         st.markdown("---")
-st.success("🎉 Votre analyse est terminée ! N’hésitez pas à nous contacter si vous souhaitez un conseil personnalisé.")
+
+    st.success("🎉 Votre analyse est terminée ! N’hésitez pas à nous contacter si vous souhaitez un conseil personnalisé.")
+
+    # Ajout bouton téléchargement PDF analyse IA
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", size=12)
+    for i, texte in enumerate(contract_texts):
+        pdf.multi_cell(0, 10, f"Analyse du Contrat {i+1} :
+{text[:1000]}
+---
+")
+    buffer = BytesIO()
+    pdf.output(buffer)
+    b64 = base64.b64encode(buffer.getvalue()).decode()
+    href = f'<a href="data:application/octet-stream;base64,{b64}" download="analyse_contrat.pdf">📥 Télécharger l’analyse IA (PDF)</a>'
+    st.markdown(href, unsafe_allow_html=True)
+
+    # Formulaire de contact intégré
+    st.markdown("""
+    ---
+    ### 📞 Demande de contact personnalisée
+    Vous souhaitez qu’on vous rappelle ou qu’on vous aide à changer de caisse ?
+    Remplissez ce mini formulaire :
+    """)
+    nom = st.text_input("Nom")
+    email = st.text_input("Email")
+    message = st.text_area("Votre message")
+    if st.button("Envoyer la demande"):
+        contact_msg = EmailMessage()
+        contact_msg["Subject"] = "Demande contact depuis app IA"
+        contact_msg["From"] = email
+        contact_msg["To"] = "info@monfideleconseiller.ch"
+        contact_msg.set_content(f"Nom: {nom}
+Email: {email}
+Message:
+{message}")
+        try:
+            with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+                smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
+                smtp.send_message(contact_msg)
+            st.success("📩 Votre message a été envoyé avec succès.")
+        except Exception as e:
+            st.error(f"Erreur d'envoi : {e}")
 
 st.markdown("""
 ---
