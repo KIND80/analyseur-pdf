@@ -13,9 +13,7 @@ import re
 # Données de référence
 # 💡 Ces données pourraient être croisées avec des comparateurs comme comparis.ch ou mes-complementaires.ch pour enrichir l'analyse (prix, franchises, modèles alternatifs, etc.)
 base_prestations = {
-    # Données tarifaires indicatives (CHF/mois) — à enrichir
-    "Assura": {"tarif": 250, "franchise": 2500, "mode": "standard",
-    "Assura": {"dentaire": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, "etranger": False},
+    "Assura": {"dentaire": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, "etranger": False, "tarif": 250, "franchise": 2500, "mode": "standard"},
     "Sympany": {"dentaire": 5000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Groupe Mutuel": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Visana": {"dentaire": 8000, "hospitalisation": "Flex", "médecine": True, "checkup": True, "etranger": True},
