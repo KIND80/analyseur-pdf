@@ -161,8 +161,7 @@ if uploaded_files:
     for i, texte in enumerate(contract_texts):
         pdf.multi_cell(0, 10, f"Analyse du Contrat {i+1} :
 {text[:1000]}
----
-")
+---")
     buffer = BytesIO()
     pdf.output(buffer)
     b64 = base64.b64encode(buffer.getvalue()).decode()
