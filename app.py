@@ -140,6 +140,10 @@ Voici le texte à analyser :
             )
             analyse = response.choices[0].message.content
             st.markdown("<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;margin-top:1em;'>", unsafe_allow_html=True)
+                        # Mise en forme avec lignes de séparation colorées
+            for section in ["LAMal", "LCA", "Hospitalisation"]:
+                if section.lower() in analyse.lower():
+                    st.markdown(f"<div style='height: 4px; background-color: #007BFF; border-radius: 2px; margin: 1em 0;'></div>", unsafe_allow_html=True)
             st.markdown(analyse, unsafe_allow_html=True)
             if "doublon" in analyse.lower():
                 st.error("🚨 Doublon détecté dans le contrat ! Pensez à vérifier les garanties similaires dans plusieurs assurances.")
