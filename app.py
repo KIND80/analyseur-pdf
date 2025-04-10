@@ -188,18 +188,19 @@ Voici le texte à analyser :
 
     
 
-    st.markdown("""
-<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;'>
-<h4>✅ Analyse terminée avec succès !</h4>
-<p>Vous venez de recevoir une explication claire de votre contrat d’assurance santé, basée sur l’IA. Voici ce que vous pouvez faire maintenant :</p>
-<ul>
-  <li>📬 Consulter les détails de l’analyse ci-dessus</li>
-  <li>🤔 Poser une question complémentaire à l’assistant IA</li>
-  <li>📈 Demander une recommandation ou un accompagnement personnalisé</li>
-</ul>
-<p>Nous restons à votre disposition pour toute aide complémentaire.</p>
-</div>
-""", unsafe_allow_html=True)
+    st.markdown(
+    "<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;'>"
+    "<h4>Analyse terminée avec succès ✅</h4>"
+    "<p>Vous venez de recevoir une explication claire de votre contrat d’assurance santé, basée sur l’IA. Voici ce que vous pouvez faire maintenant :</p>"
+    "<ul>"
+    "<li>📬 Consulter les détails de l’analyse ci-dessus</li>"
+    "<li>🤔 Poser une question complémentaire à l’assistant IA</li>"
+    "<li>📈 Demander une recommandation ou un accompagnement personnalisé</li>"
+    "</ul>"
+    "<p>Nous restons à votre disposition pour toute aide complémentaire.</p>"
+    "</div>",
+    unsafe_allow_html=True
+)
 
     # Téléchargement désactivé car 'buffer.getvalue()' n'est pas défini ici sans PDF généré.
 # Pour réintégrer cette partie, il faut générer le PDF avec FPDF comme avant (sans erreur f-string).
