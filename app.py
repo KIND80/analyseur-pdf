@@ -229,5 +229,5 @@ Voici le texte à analyser :
 st.markdown("""
 ---
 ### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?
-👉 Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)
+Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)
 """)
