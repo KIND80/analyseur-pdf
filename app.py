@@ -155,12 +155,14 @@ Voici le texte à analyser :
                 note += 1
             if any(word in text.lower() for word in ["dentaire", "fitness", "lunettes", "étranger"]):
                 note = min(7, note + 1)
-            st.markdown(f"""
-            <div style='background-color:#f9f9f9;border-left: 5px solid #1abc9c;padding: 1em;margin-top: 1em;'>
-            <strong>🧮 Note globale de couverture santé :</strong> <span style='font-size: 1.4em;'>{note}/10</span><br>
-            <em>6/10 est recommandé pour une couverture équilibrée incluant base + complémentaire + hospitalisation.</em><br>
-            {"🔴 Couverture insuffisante : vous n'avez que le minimum légal." if note <= 3 else ("🟠 Couverture moyenne : vous êtes protégé partiellement, mais des options sont à envisager." if note <= 5 else "🟢 Bonne couverture : vous disposez d'une assurance santé équilibrée.")}
-            </div>""", unsafe_allow_html=True)
+            st.markdown(
+            f"<div style='background-color:#f9f9f9;border-left: 5px solid #1abc9c;padding: 1em;margin-top: 1em;'>"
+            f"<strong>🧮 Note globale de couverture santé :</strong> <span style='font-size: 1.4em;'>{note}/10</span><br>"
+            "<em>6/10 est recommandé pour une couverture équilibrée incluant base + complémentaire + hospitalisation.</em><br>"
+            f"{'🔴 Couverture insuffisante : vous n’avez que le minimum légal.' if note <= 3 else ('🟠 Couverture moyenne : vous êtes protégé partiellement, mais des options sont à envisager.' if note <= 5 else '🟢 Bonne couverture : vous disposez d’une assurance santé équilibrée.')}"
+            "</div>",
+            unsafe_allow_html=True
+        )
             """, unsafe_allow_html=True)
             if "doublon" in analyse.lower():
                 st.error("🚨 Doublon détecté entre plusieurs assurances complémentaires ou polices. Cela signifie que certaines garanties similaires (ex : dentaire, hospitalisation) sont peut-être présentes dans plus d'une complémentaire. Vérifiez pour éviter de payer deux fois.")
