@@ -113,7 +113,7 @@ if uploaded_files:
 
         with st.spinner("🔍 Analyse intelligente du contrat en cours..."):
             st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
-        prompt = f"Tu es un conseiller expert en assurance santé. Analyse ce contrat en trois parties distinctes :
+        prompt = f"""Tu es un conseiller expert en assurance santé. Analyse ce contrat en trois parties distinctes :
 
 1. **LAMal (assurance de base obligatoire)** : quelles couvertures essentielles sont présentes ?
 2. **LCA (assurance complémentaire)** : quelles options ou prestations supplémentaires sont incluses ?
@@ -127,7 +127,7 @@ Pour chaque section :
 
 Voici le texte à analyser :
 
-{text[:3000]}"
+{text[:3000]}"""
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
