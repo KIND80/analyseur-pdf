@@ -107,7 +107,7 @@ else:
 
 user_objective = st.radio("🎯 Quel est votre objectif principal ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"], index=2)
 
-uploaded_files = st.file_uploader("📄 Téléversez vos contrats PDF (max 3) ou **photos lisibles** (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True) ou des **photos claires** de votre contrat (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("📄 Téléversez vos contrats PDF (max 3) ou **photos lisibles** (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True) de votre contrat (JPEG, PNG)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
 
 if uploaded_files:
     contract_texts = []
