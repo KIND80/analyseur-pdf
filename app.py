@@ -60,32 +60,45 @@ def calculer_score_utilisateur(texte_pdf, preference):
     return sorted(score.items(), key=lambda x: x[1], reverse=True)
 
 def detect_doublons(texts):
+    prestations_keywords = [
+        "dentaire", "orthodontie", "lunettes", "hospitalisation", "ambulance",
+        "check-up", "médecine alternative", "médecine naturelle",
+        "vaccins", "psychothérapie", "étranger", "soins à l’étranger"
+    ]
+
     doublons_detectés = []
-    internes_detectés = []
     explications = []
-    exclusions = ["case postale", "adresse", "police", "n°", "contrat", "pdf", "page", "doc", "edition", "annexe"]
-    seen_by_file = []
 
+    prestations_par_contrat = []
+
+    # Extraction des prestations utiles par contrat
     for texte in texts:
-        lignes = [l.strip() for l in texte.lower().split('\n') if len(l.strip()) > 20 and not any(e in l for e in exclusions)]
-        seen_by_file.append(set(lignes))
+        lignes = texte.lower().split('\n')
+        prestations = [
+            l.strip() for l in lignes
+            if any(kw in l for kw in prestations_keywords) and "accident" not in l
+        ]
+        prestations_par_contrat.append(prestations)
 
-        internes = set()
-        for l in lignes:
-            if l in internes:
-                internes_detectés.append(l)
-                explications.append(f"🔁 Doublon interne : « {l[:60]}... »")
+    # Doublons internes (dans un même contrat)
+    for i, prestations in enumerate(prestations_par_contrat):
+        deja_vus = set()
+        for p in prestations:
+            if p in deja_vus:
+                doublons_detectés.append(p)
+                explications.append(f"🔁 Doublon interne détecté dans le Contrat {i+1} : « {p[:60]}... »")
             else:
-                internes.add(l)
+                deja_vus.add(p)
 
-    for i in range(len(seen_by_file)):
-        for j in range(i + 1, len(seen_by_file)):
-            inter = seen_by_file[i].intersection(seen_by_file[j])
-            for d in inter:
-                explications.append(f"🔁 Doublon inter-contrats (Contrat {i+1} & {j+1}) : « {d[:60]}... »")
-            doublons_detectés.extend(inter)
+    # Doublons externes (entre plusieurs contrats)
+    for i in range(len(prestations_par_contrat)):
+        for j in range(i + 1, len(prestations_par_contrat)):
+            communs = set(prestations_par_contrat[i]).intersection(prestations_par_contrat[j])
+            for c in communs:
+                doublons_detectés.append(c)
+                explications.append(f"🔁 Doublon entre Contrat {i+1} et Contrat {j+1} : « {c[:60]}... »")
 
-    return list(set(doublons_detectés + internes_detectés)), explications
+    return list(set(doublons_detectés)), explications
 # --- INTERFACE UTILISATEUR ---
 
 st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
