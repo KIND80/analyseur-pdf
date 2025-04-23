@@ -181,32 +181,6 @@ Voici le texte du contrat à analyser :
     <p><em>Une bonne couverture comporte LAMal, LCA et hospitalisation (note ≥ 6/10)</em></p>
 </div>
 """, unsafe_allow_html=True)
-        score = 0
-        t = text.lower()
-        if "lamal" in t or "base obligatoire" in t:
-            score += 2
-        if "complémentaire" in t or "lca" in t:
-            score += 3
-        if "hospitalisation" in t:
-            score += 1
-        if any(k in t for k in ["dentaire", "lunettes", "étranger", "médecine alternative"]):
-            score += 1
-
-        score = min(score, 7)
-
-        # Affichage résultat final UX
-        st.markdown(f"""
-<div style='background-color:#f8f8f8;padding:1em;border-radius:10px;margin-top:1em;border-left:5px solid #3498db'>
-    <h4>📊 Résumé de l'analyse du contrat {i+1}</h4>
-    <ul>
-        <li><strong>LAMal :</strong> {'✅ Oui' if 'lamal' in t else '❌ Non détectée'}</li>
-        <li><strong>Complémentaire (LCA) :</strong> {'✅ Oui' if 'complémentaire' in t or 'lca' in t else '❌ Aucune'}</li>
-        <li><strong>Hospitalisation :</strong> {'✅ Oui' if 'hospitalisation' in t else '❌ Aucune'}</li>
-    </ul>
-    <p><strong>Note de couverture :</strong> <span style='font-size:1.3em'>{score}/10</span></p>
-    <p><em>Une bonne couverture comporte LAMal, LCA et hospitalisation (note ≥ 6/10)</em></p>
-</div>
-""", unsafe_allow_html=True)
     st.markdown("---")
     st.subheader("💬 Discuter avec l'assistant IA")
 
