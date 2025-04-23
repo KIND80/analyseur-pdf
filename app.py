@@ -66,15 +66,31 @@ def calculer_score_utilisateur(texte_pdf, preference):
 
     return sorted(score.items(), key=lambda x: x[1], reverse=True)
 
+def detect_doublons(texts):
+    doublons_detectés = []
+    seen_phrases = set()
+    for i, texte in enumerate(texts):
+        lignes = [l.strip() for l in texte.lower().split('
+') if l.strip()]
+        for ligne in lignes:
+            if ligne in seen_phrases:
+                doublons_detectés.append(ligne)
+            else:
+                seen_phrases.add(ligne)
+    return list(set(doublons_detectés))
+
 # UI config
 st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
 st.title("🤖 Votre Assistant Assurance Santé Intelligent")
 
 st.markdown("""
-Téléversez jusqu'à **3 contrats PDF** ou **photos de votre contrat** pour :
-- une **analyse simplifiée**
-- un **scoring automatique**
-- des **recommandations personnalisées**
+Ce service a été conçu pour **simplifier la lecture de votre contrat d’assurance santé**, **détecter automatiquement les doublons** entre plusieurs polices et **vous fournir une analyse critique, neutre et structurée**.
+
+Téléversez jusqu'à **3 contrats PDF** ou **photos lisibles** pour bénéficier de :
+- Une **lecture intelligente assistée par IA**
+- Une **vérification de doublons entre contrats**
+- Un **résumé clair de vos couvertures** (LAMal, complémentaire, hospitalisation)
+- Des **recommandations personnalisées selon vos besoins**
 """)
 
 st.markdown("### 🔐 Vérification d'identité")
@@ -117,7 +133,10 @@ if uploaded_files:
 
         with st.spinner("🔍 Analyse intelligente du contrat en cours..."):
             st.markdown("<div style='background-color:#f0f9ff;padding:1em;border-radius:10px;margin-top:1em;'>🕵️‍♂️ L’intelligence artificielle analyse maintenant votre contrat, cela peut prendre quelques instants...</div>", unsafe_allow_html=True)
-        st.markdown(f"#### 🤖 Analyse IA du Contrat {i+1}")
+        st.markdown(f"""
+<div style='background-color:#f9f9f9;padding: 1em 1.5em;border-radius: 10px;margin-top: 2em;'>
+<h4 style='margin-top: 0;'>Analyse IA du Contrat {i+1}</h4>
+""", unsafe_allow_html=True)
         # prompt déplacé dans le bloc st.spinner
         prompt = f"""Tu es un conseiller expert en assurance santé. Analyse ce contrat en trois parties distinctes :
 
@@ -148,6 +167,7 @@ Voici le texte à analyser :
             )
             analyse = response.choices[0].message.content
             st.markdown(analyse, unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
             note = 2  # LAMal par défaut
             if any(word in text.lower() for word in ["complémentaire", "lca"]):
                 note += 3
@@ -165,8 +185,10 @@ Voici le texte à analyser :
     </p>
 </div>
 """, unsafe_allow_html=True)
-            if "doublon" in analyse.lower():
-                st.error("🚨 Doublon détecté entre plusieurs assurances complémentaires ou polices. Cela signifie que certaines garanties similaires (ex : dentaire, hospitalisation) sont peut-être présentes dans plus d'une complémentaire. Vérifiez pour éviter de payer deux fois.")
+            doublons = detect_doublons(contract_texts)
+            if doublons:
+                st.error("🛑 Doublons potentiels détectés entre vos contrats :")
+                st.markdown("<ul style='color:#c0392b;'>" + ''.join([f"<li>{d}</li>" for d in doublons]) + "</ul>", unsafe_allow_html=True)
             else:
                 st.success("✅ Aucun doublon détecté dans ce contrat.")
             st.markdown("</div>", unsafe_allow_html=True)
