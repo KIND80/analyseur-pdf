@@ -109,7 +109,7 @@ uploaded_files = st.file_uploader("📄 Téléversez vos contrats PDF ou photos 
 contract_texts = []
 if uploaded_files:
     for i, file in enumerate(uploaded_files):
-        st.markdown(f"### 📘 Aperçu du contrat {i+1}")
+        st.markdown(f"### 📘 Analyse du contrat en cours {i+1}")
         file_type = file.type
         if file_type in ["image/jpeg", "image/png"]:
             image = Image.open(file)
