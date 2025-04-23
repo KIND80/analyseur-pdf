@@ -70,8 +70,7 @@ def detect_doublons(texts):
     doublons_detectés = []
     seen_phrases = set()
     for i, texte in enumerate(texts):
-        lignes = [l.strip() for l in texte.lower().split('
-') if l.strip()]
+        lignes = [l.strip() for l in texte.lower().split('\n') if l.strip()]
         for ligne in lignes:
             if ligne in seen_phrases:
                 doublons_detectés.append(ligne)
