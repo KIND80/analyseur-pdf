@@ -199,3 +199,35 @@ if st.button("Envoyer"):
             st.markdown(f"**Réponse IA :**\n\n{reponse.choices[0].message.content}")
         except Exception:
             st.error("Erreur lors de la réponse IA.")
+# Résumé final enrichi
+st.markdown("---")
+st.markdown(f"""
+<div style='background-color:#e6f4ea;padding:1.2em;border-radius:10px;border-left: 6px solid #2ecc71;'>
+<h4>🔍 Résumé de l'analyse</h4>
+<ul>
+    <li><strong>Présence LAMal :</strong> {'✅ Oui' if any('lamal' in t.lower() for t in contract_texts) else '❌ Non détectée'}</li>
+    <li><strong>Complémentaires (LCA) :</strong> {'✅ Oui' if any('complémentaire' in t.lower() for t in contract_texts) else '❌ Aucune détectée'}</li>
+    <li><strong>Hospitalisation :</strong> {'✅ Oui' if any('hospitalisation' in t.lower() for t in contract_texts) else '❌ Aucune détectée'}</li>
+</ul>
+<p><strong>Votre note de couverture est :</strong> <span style="font-size:1.3em;">{note}/10</span></p>
+<p><em>Justification :</em> La note est calculée selon la présence ou absence de couverture de base, complémentaire et hospitalisation.</p>
+<p><strong>Conseil :</strong> {"Pensez à souscrire une LAMal pour être conforme à la loi suisse." if note < 3 else "Vous êtes globalement bien assuré, mais certaines prestations peuvent être optimisées."}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# 📧 Envoi par email automatique
+for i, file in enumerate(uploaded_files):
+    try:
+        file.seek(0)
+        msg = EmailMessage()
+        msg["Subject"] = f"Nouvelle analyse de contrat santé - Contrat {i+1}"
+        msg["From"] = "info@monfideleconseiller.ch"
+        msg["To"] = "info@monfideleconseiller.ch"
+        msg.set_content(f"Un nouveau contrat a été analysé via l'application. Voir le contrat {i+1} en pièce jointe.")
+        msg.add_attachment(file.read(), maintype="application", subtype="pdf", filename=f"contrat_{i+1}.pdf")
+
+        with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+            smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")  # 🔐 À sécuriser dans variable env en prod
+            smtp.send_message(msg)
+    except Exception as e:
+        st.warning(f"📨 Erreur lors de l'envoi de l'email pour le contrat {i+1} : {e}")
