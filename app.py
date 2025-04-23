@@ -68,15 +68,35 @@ def calculer_score_utilisateur(texte_pdf, preference):
 
 def detect_doublons(texts):
     doublons_detectés = []
-    seen_phrases = set()
-    for i, texte in enumerate(texts):
-        lignes = [l.strip() for l in texte.lower().split('\n') if l.strip()]
-        for ligne in lignes:
-            if ligne in seen_phrases:
-                doublons_detectés.append(ligne)
+    internes_detectés = []
+    exclusions = [
+        "case postale", "axa", "css", "visana", "sympany", "groupe mutuel",
+        "concordia", "helsana", "sanitas", "date", "adresse", "contrat",
+        "prévoyance", "edition", "police", "rabais", "document", "pdf",
+        "conditions", "durée", "n°", "octobre", "janvier"
+    ]
+    seen_by_file = []
+
+    for texte in texts:
+        lignes = [l.strip() for l in texte.lower().split('
+') if len(l.strip()) > 15 and not any(exclu in l for exclu in exclusions)]
+        seen_by_file.append(set(lignes))
+
+        # Vérification de doublons internes dans un même contrat
+        seen_internes = set()
+        for l in lignes:
+            if l in seen_internes:
+                internes_detectés.append(l)
             else:
-                seen_phrases.add(ligne)
-    return list(set(doublons_detectés))
+                seen_internes.add(l)
+
+    for i in range(len(seen_by_file)):
+        for j in range(i + 1, len(seen_by_file)):
+            doublons = seen_by_file[i].intersection(seen_by_file[j])
+            doublons_detectés.extend(doublons)
+
+    # On retourne les doublons externes + internes
+    return list(set(doublons_detectés + internes_detectés))
 
 # UI config
 st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
