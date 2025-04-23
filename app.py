@@ -1,18 +1,20 @@
 import streamlit as st
 import fitz  # PyMuPDF
 from openai import OpenAI
-from fpdf import FPDF
-import base64
-import smtplib
-from email.message import EmailMessage
-from io import BytesIO
 from PIL import Image
 import pytesseract
+from io import BytesIO
+from fpdf import FPDF
+import smtplib
+from email.message import EmailMessage
 import re
 
-# --- Données de base pour analyse des caisses ---
+# Base de prestations par caisse
 base_prestations = {
-    "Assura": {"dentaire": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, "etranger": False},
+    "Assura": {
+        "orthodontie": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False,
+        "etranger": False, "tarif": 250, "franchise": 2500, "mode": "standard"
+    },
     "Sympany": {"dentaire": 5000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Groupe Mutuel": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Visana": {"dentaire": 8000, "hospitalisation": "Flex", "médecine": True, "checkup": True, "etranger": True},
@@ -20,207 +22,150 @@ base_prestations = {
     "SWICA": {"dentaire": 3000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "Helsana": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
     "CSS": {"dentaire": 4000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
-    "Sanitas": {"dentaire": 4000, "hospitalisation": "Top Liberty", "médecine": True, "checkup": True, "etranger": True}
+    "Sanitas": {
+        "dentaire": 4000, "hospitalisation": "Top Liberty", "médecine": True, "checkup": True, "etranger": True,
+        "tarif": 390, "franchise": 300, "mode": "modèle HMO"
+    }
 }
 
-# --- Scoring personnalisé ---
-def calculer_score_utilisateur(texte_pdf, preference):
-    texte = texte_pdf.lower()
-    score = {nom: 0 for nom in base_prestations.keys()}
-
-    if "dentaire" in texte:
-        for nom in score:
-            if base_prestations[nom].get("dentaire", 0) >= 5000:
-                score[nom] += 2
-        if "1500" in texte:
-            score["Assura"] += 1
-
-    if "privée" in texte or "top liberty" in texte:
-        for nom in score:
-            if "privée" in base_prestations[nom]["hospitalisation"].lower():
-                score[nom] += 2
-
-    if "médecine alternative" in texte or "médecine naturelle" in texte:
-        for nom in score:
-            if base_prestations[nom]["médecine"]:
-                score[nom] += 1
-
-    if "check-up" in texte or "bilan santé" in texte or "fitness" in texte:
-        for nom in score:
-            if base_prestations[nom]["checkup"]:
-                score[nom] += 1
-
-    if "étranger" in texte:
-        for nom in score:
-            if base_prestations[nom]["etranger"]:
-                score[nom] += 2
-
-    if preference == "📉 Réduire les coûts":
-        score["Assura"] += 3
-    elif preference == "📈 Améliorer les prestations":
-        for nom in score:
-            score[nom] += 1
-
-    return sorted(score.items(), key=lambda x: x[1], reverse=True)
-# --- Détection avancée des doublons ---
-def detect_doublons_prestations(texts):
-    prestations_keywords = ["dentaire", "orthodontie", "lunettes", "hospitalisation", "médecine", "check-up", "étranger"]
-    exclusions = ["accident", "conditions", "édition", "adresse", "famille", "police", "document", "date", "case postale"]
-    seen_by_file = []
+def detect_doublons(texts):
     doublons_detectés = []
+    internes_detectés = []
     explications = []
+    exclusions = [
+        "case postale", "axa", "css", "visana", "sympany", "groupe mutuel",
+        "concordia", "helsana", "sanitas", "date", "adresse", "contrat",
+        "prévoyance", "edition", "police", "rabais", "document", "pdf",
+        "conditions", "durée", "n°", "octobre", "janvier"
+    ]
+    seen_by_file = []
 
-    for idx, texte in enumerate(texts):
-        lignes = [l.strip().lower() for l in texte.split('\n') if len(l.strip()) > 10]
-        prestations = [l for l in lignes if any(k in l for k in prestations_keywords) and not any(e in l for e in exclusions)]
-        seen_by_file.append(set(prestations))
+    for texte in texts:
+        lignes = [l.strip() for l in texte.lower().split('\n') if len(l.strip()) > 15 and not any(exclu in l for exclu in exclusions)]
+        seen_by_file.append(set(lignes))
 
-        # Doublons internes
-        uniques = set()
-        for p in prestations:
-            if p in uniques:
-                explications.append(f"🔁 Doublon interne dans Contrat {idx+1} : « {p[:60]}... »")
-                doublons_detectés.append(p)
+        seen_internes = set()
+        for l in lignes:
+            if l in seen_internes:
+                internes_detectés.append(l)
+                explications.append(f"Doublon interne détecté : la ligne \"{l[:50]}...\" apparaît plusieurs fois dans un même contrat.")
             else:
-                uniques.add(p)
+                seen_internes.add(l)
 
-    # Doublons entre contrats
     for i in range(len(seen_by_file)):
         for j in range(i + 1, len(seen_by_file)):
-            communs = seen_by_file[i].intersection(seen_by_file[j])
-            for doublon in communs:
-                explications.append(f"🔁 Doublon entre Contrat {i+1} et Contrat {j+1} : « {doublon[:60]}... »")
-                doublons_detectés.append(doublon)
+            doublons = seen_by_file[i].intersection(seen_by_file[j])
+            for d in doublons:
+                explications.append(f"Doublon entre contrat {i+1} et contrat {j+1} : \"{d[:50]}...\"")
+            doublons_detectés.extend(doublons)
 
-    return list(set(doublons_detectés)), explications
-# --- UI principale ---
-st.set_page_config(page_title="Comparateur IA de contrats santé", layout="centered")
-st.title("🧠 Assistant Intelligent de Contrats Santé")
+    return list(set(doublons_detectés + internes_detectés)), explications
 
-st.markdown("""
-Ce service vous aide à :
-- 📖 Lire clairement vos contrats d'assurance
-- 🔎 Détecter les doublons de garanties
-- 🤖 Obtenir une analyse intelligente personnalisée
-""")
+# Interface
+st.set_page_config(page_title="Assistant Assurance IA", layout="centered")
+st.title("🧠 Assistant IA - Analyse de Contrats Santé")
 
-# Étape 1 : Authentification
-api_key = st.text_input("🔐 Entrez votre clé OpenAI :", type="password")
+api_key = st.text_input("🔐 Clé OpenAI", type="password")
 if not api_key:
     st.stop()
 client = OpenAI(api_key=api_key)
 
-# Étape 2 : Objectif
-objectif = st.radio("🎯 Votre objectif ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"], index=2)
+objectif = st.radio("🎯 Votre objectif ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"])
+travail = st.radio("👤 Travaillez-vous au moins 8h/semaine ?", ["Oui", "Non"], index=0)
 
-# Étape 3 : Situation
-travail = st.radio("👤 Travaillez-vous 8h+/semaine ?", ["Oui", "Non"], index=0)
-
-# Étape 4 : Téléversement des contrats
-uploaded_files = st.file_uploader("📄 Téléversez vos fichiers PDF ou photos (max 3)", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
-
-if not uploaded_files:
-    st.info("📂 Veuillez téléverser au moins un contrat.")
-    st.stop()
-
-textes_contracts = []
-for i, file in enumerate(uploaded_files):
-    st.markdown(f"### 📘 Contrat {i+1}")
-    if file.type.startswith("image"):
-        st.image(file)
-        image = Image.open(file)
-        text = pytesseract.image_to_string(image)
-    else:
-        buffer = BytesIO(file.read())
-        doc = fitz.open(stream=buffer.read(), filetype="pdf")
-        text = "\n".join(page.get_text() for page in doc)
-    textes_contracts.append(text)
-    with st.spinner("🧠 Analyse IA en cours..."):
-        prompt = f"""Tu es un conseiller expert en assurance santé.
-Analyse ce contrat en 3 parties :
-1. LAMal : indique si présente ou absente, franchise et remboursement.
-2. LCA : prestations complémentaires (dentaire, médecines alternatives, étranger…).
-3. Hospitalisation : type de chambre et prestations.
-
-Explique simplement, note la couverture globale sur 10. Voici le texte :
-
-{text[:3000]}"""
-        try:
-            completion = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "Tu es un conseiller assurance bienveillant et synthétique."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            analyse = completion.choices[0].message.content
-            st.markdown(analyse)
-
-            note = 0
-            has_lamal = any(kw in text.lower() for kw in ["lamal", "assurance de base", "obligatoire", "franchise"])
-            has_lca = any(kw in text.lower() for kw in ["complémentaire", "dentaire", "lunettes", "médecine alternative"])
-            has_hosp = any(kw in text.lower() for kw in ["hospitalisation", "mi-privée", "privée", "chambre"])
-
-            if has_lamal: note += 2
-            if has_lca: note += 3
-            if has_hosp: note += 2
-            if "étranger" in text.lower() or "lunettes" in text.lower(): note += 1
-            if note >= 7 and not has_lamal:
-                note = 3  # Pas de LAMal = faible couverture malgré les complémentaires
-
-            st.markdown(f"""
-<div style='background-color:#eef2f7;padding:1em;border-radius:10px;margin-top:1em;'>
-<strong>Note finale :</strong> {note}/10<br>
-{"<span style='color:red;'>⚠️ LAMal absente !</span><br>" if not has_lamal else ""}
-<span style='font-size:0.9em;'>Une couverture optimale commence à 6/10, incluant LAMal + complémentaire + hospitalisation.</span>
-</div>
-""", unsafe_allow_html=True)
-        except Exception as e:
-            st.warning(f"Erreur d’analyse IA : {e}")
-        # Doublons sur les prestations LCA uniquement
-        prestations_clés = ["dentaire", "hospitalisation", "lunettes", "alternative", "étranger"]
-        resume_prestations = []
-
-        for txt in contract_texts:
-            resume_prestations.append({k: any(k in txt.lower() for k in [k]) for k in prestations_clés})
-
-        doublons_detectés = []
-        for i in range(len(resume_prestations)):
-            for j in range(i + 1, len(resume_prestations)):
-                communs = [k for k in prestations_clés if resume_prestations[i][k] and resume_prestations[j][k]]
-                if communs:
-                    doublons_detectés.append((i + 1, j + 1, communs))
-
-        if doublons_detectés:
-            st.markdown("<hr>", unsafe_allow_html=True)
-            st.markdown("### 🔁 Doublons détectés entre vos contrats :", unsafe_allow_html=True)
-            for d in doublons_detectés:
-                st.markdown(f"- Contrat {d[0]} et Contrat {d[1]} : **{', '.join(d[2]).capitalize()}**", unsafe_allow_html=True)
-            st.info("💡 Pensez à regrouper vos prestations similaires dans une seule assurance complémentaire pour éviter de payer deux fois.")
+uploaded_files = st.file_uploader("📄 Téléversez vos fichiers PDF ou images", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
+if uploaded_files:
+    st.markdown("---")
+    textes = []
+    for i, file in enumerate(uploaded_files):
+        st.subheader(f"📘 Contrat {i+1}")
+        if file.type.startswith("image"):
+            st.image(file)
+            image = Image.open(file)
+            texte = pytesseract.image_to_string(image)
         else:
-            st.success("✅ Aucun doublon détecté sur les prestations complémentaires.")
+            buffer = BytesIO(file.read())
+            doc = fitz.open(stream=buffer.read(), filetype="pdf")
+            texte = "\n".join(page.get_text() for page in doc)
 
-        # Chat final avec IA
-        st.markdown("---")
-        st.markdown("### 💬 Posez une question à notre assistant IA")
-        question_utilisateur = st.text_area("✍️ Votre question ici (ex : Que puis-je supprimer ? Quelle est ma meilleure couverture ?)")
-        if st.button("Obtenir une réponse"):
-            if question_utilisateur.strip():
-                try:
-                    reponse = client.chat.completions.create(
-                        model="gpt-4",
-                        messages=[
-                            {"role": "system", "content": "Tu es un conseiller en assurance suisse, clair et bienveillant. Tu réponds en fonction du contenu du contrat analysé."},
-                            {"role": "user", "content": question_utilisateur}
-                        ]
-                    )
-                    st.markdown("#### 🤖 Réponse IA :", unsafe_allow_html=True)
-                    st.markdown(reponse.choices[0].message.content)
-                except Exception as e:
-                    st.error(f"Erreur lors de la réponse IA : {e}")
-            else:
-                st.warning("⚠️ Veuillez saisir une question.")
+        textes.append(texte)
 
-        # Fin
-        st.markdown("---")
-        st.info("📩 Une question ? Contactez-nous à info@monfideleconseiller.ch")
+        with st.spinner("🧠 Analyse IA du contrat en cours..."):
+            prompt = f"""Analyse ce contrat en 3 parties distinctes :
+1. LAMal (assurance de base obligatoire) : quelles couvertures ? Quelles limites ? Présente les montants.
+2. LCA (complémentaire santé) : quelles prestations spécifiques ? Dentaire, lunettes, médecines alternatives, etc.
+3. Hospitalisation : quel type d'hébergement ? Couverture cantonale, semi-privée ou privée ?
+
+À la fin, donne une note sur 10 selon la couverture (ex : 2/10 si uniquement LAMal, 6/10 si LAMal+LCA+Hospitalisation).
+{textes[i][:3000]}"""
+
+            try:
+                rep = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "Tu es un expert en assurance santé suisse. Sois clair, neutre et professionnel."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                analyse = rep.choices[0].message.content
+                st.markdown(analyse)
+            except Exception as e:
+                st.error("⚠️ Erreur IA : " + str(e))
+
+    note = 0
+    if any("lamal" in t.lower() for t in textes):
+        note += 2
+    if any("complémentaire" in t.lower() or "lca" in t.lower() for t in textes):
+        note += 3
+    if any("hospitalisation" in t.lower() or "privée" in t.lower() for t in textes):
+        note += 1
+    if any(word in t.lower() for t in textes for word in ["dentaire", "fitness", "lunettes", "médecine alternative", "étranger"]):
+        note += 1
+    note = min(note, 7)
+
+    st.markdown(f"""
+    <div style='background-color:#f0f4f7;padding:1em;border-radius:10px;margin-top:1em;'>
+        <h4>📊 Résultat global</h4>
+        <p><strong>Note IA :</strong> {note}/10</p>
+        <p>{"✅ Bonne couverture santé." if note >= 6 else "⚠️ Couverture partielle détectée, des optimisations sont possibles."}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    doublons, explications = detect_doublons(textes)
+    if doublons:
+        st.markdown("""
+        <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
+            <h4>🔁 Doublons détectés</h4>
+            <p>Des éléments redondants ont été repérés :</p>
+            <ul>""" + "".join(f"<li>{e}</li>" for e in explications) + """</ul>
+            <p><strong>Conseil :</strong> Vérifiez si vous êtes doublement couvert pour une même prestation (ex. dentaire, hospitalisation).</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.success("✅ Aucun doublon détecté entre les contrats analysés.")
+    # Questions supplémentaires à l'IA
+    st.markdown("---")
+    st.subheader("💬 Posez une question à l'assistant IA")
+    user_q = st.text_area("Votre question en lien avec vos contrats ou votre situation", height=150, placeholder="Exemple : Est-ce que ma couverture dentaire est suffisante ?")
+
+    if st.button("Obtenir une réponse IA"):
+        if user_q:
+            try:
+                context_prompt = "\n\n".join([f"Contrat {i+1} :\n{textes[i][:2000]}" for i in range(len(textes))])
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "Tu es un assistant expert en assurance suisse, bienveillant et synthétique. Utilise uniquement les infos du contrat fourni si possible."},
+                        {"role": "user", "content": f"{context_prompt}\n\nQuestion : {user_q}"}
+                    ]
+                )
+                st.markdown("### 🤖 Réponse de l'assistant :")
+                st.markdown(response.choices[0].message.content)
+            except Exception as e:
+                st.error(f"❌ Erreur de réponse IA : {e}")
+        else:
+            st.warning("Veuillez écrire une question avant de lancer la réponse.")
+
+    # Fin
+    st.markdown("---")
+    st.info("📫 Une question ? Contactez-nous à info@monfideleconseiller.ch")
