@@ -188,13 +188,26 @@ Voici le texte du contrat :
             st.error(f"❌ Erreur IA : {e}")
 # --- SCORING GLOBAL + DOUBLONS ---
 
-note_globale = 2  # LAMal seule par défaut
-if any("complémentaire" in t.lower() or "lca" in t.lower() for t in textes):
-    note_globale += 3
-if any("hospitalisation" in t.lower() or "privée" in t.lower() or "mi-privée" in t.lower() for t in textes):
-    note_globale += 1
-if any(any(m in t.lower() for m in ["dentaire", "lunettes", "étranger", "fitness"]) for t in textes):
-    note_globale = min(7, note_globale + 1)
+texte_complet = " ".join(textes).lower()
+a_lamal = any(word in texte_complet for word in ["lamal", "assurance de base", "obligatoire", "franchise"])
+a_lca = any(word in texte_complet for word in ["complémentaire", "lca"])
+a_hosp = any(word in texte_complet for word in ["hospitalisation", "privée", "mi-privée"])
+a_options = any(word in texte_complet for word in ["dentaire", "fitness", "lunettes", "étranger", "médecine alternative"])
+
+note = 0
+if a_lamal:
+    note += 2
+else:
+    st.warning("⚠️ Aucune mention de LAMal (assurance de base obligatoire) détectée. Cela peut indiquer une absence de couverture minimale légale.")
+
+if a_lca:
+    note += 3
+if a_hosp:
+    note += 1
+if a_options:
+    note += 1
+
+note = min(7, note)
 
 st.markdown(f"""
 <div style='background-color:#f4f4f4;padding:1.5em;border-radius:10px;margin-top:1em;border-left:6px solid #0052cc;'>
@@ -245,6 +258,8 @@ if st.button("Obtenir une réponse"):
         st.warning("Veuillez poser une question avant de cliquer.")
 
 # --- MESSAGE DE FIN D’ANALYSE ---
+if not a_lamal:
+    st.error("🚨 Aucun élément de LAMal détecté dans vos documents. Vous semblez uniquement assuré en complémentaire, ce qui est insuffisant légalement.")
 st.markdown("---")
 st.markdown("""
 <div style='background-color:#e6f4ea;padding:1.2em;border-radius:10px;'>
