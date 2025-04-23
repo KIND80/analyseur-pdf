@@ -1,6 +1,10 @@
 import streamlit as st
 import fitz  # PyMuPDF
 from openai import OpenAI
+from fpdf import FPDF
+import base64
+import smtplib
+from email.message import EmailMessage  # <-- CE CI EST ESSENTIEL
 from io import BytesIO
 from PIL import Image
 import pytesseract
