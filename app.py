@@ -134,8 +134,7 @@ if uploaded_files:
             st.markdown("<div style='background-color:#f0f9ff;padding:1em;border-radius:10px;margin-top:1em;'>🕵️‍♂️ L’intelligence artificielle analyse maintenant votre contrat, cela peut prendre quelques instants...</div>", unsafe_allow_html=True)
         st.markdown(f"""
 <div style='background-color:#f9f9f9;padding: 1em 1.5em;border-radius: 10px;margin-top: 2em;'>
-<h4 style='margin-top: 0;'>Analyse IA du Contrat {i+1}</h4>
-""", unsafe_allow_html=True)
+<h4 style='margin-top: 0;'>Analyse IA du Contrat {i+1}</h4>""", unsafe_allow_html=True)
         # prompt déplacé dans le bloc st.spinner
         prompt = f"""Tu es un conseiller expert en assurance santé. Analyse ce contrat en trois parties distinctes :
 
@@ -166,7 +165,7 @@ Voici le texte à analyser :
             )
             analyse = response.choices[0].message.content
             st.markdown(analyse, unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+
             note = 2  # LAMal par défaut
             if any(word in text.lower() for word in ["complémentaire", "lca"]):
                 note += 3
@@ -190,7 +189,7 @@ st.markdown("</div>", unsafe_allow_html=True)
                 st.markdown("<ul style='color:#c0392b;'>" + ''.join([f"<li>{d}</li>" for d in doublons]) + "</ul>", unsafe_allow_html=True)
             else:
                 st.success("✅ Aucun doublon détecté dans ce contrat.")
-            st.markdown("</div>", unsafe_allow_html=True)
+            
         except Exception as e:
             st.warning(f"⚠️ Erreur IA : {e}")
 
