@@ -10,18 +10,37 @@ from PIL import Image
 import pytesseract
 import re
 
-# Données de référence
-# 💡 Ces données pourraient être croisées avec des comparateurs comme comparis.ch ou mes-complementaires.ch pour enrichir l'analyse (prix, franchises, modèles alternatifs, etc.)
+# Données de référence des cotisations (complètes avec d'autres caisses)
 base_prestations = {
-    "Assura": {"orthodontie": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, "etranger": False, "tarif": 250, "franchise": 2500, "mode": "standard"},
-    "Sympany": {"dentaire": 5000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
-    "Groupe Mutuel": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
-    "Visana": {"dentaire": 8000, "hospitalisation": "Flex", "médecine": True, "checkup": True, "etranger": True},
-    "Concordia": {"dentaire": 2000, "hospitalisation": "LIBERO", "médecine": True, "checkup": True, "etranger": True},
-    "SWICA": {"dentaire": 3000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
-    "Helsana": {"dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
-    "CSS": {"dentaire": 4000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True},
-    "Sanitas": {"dentaire": 4000, "hospitalisation": "Top Liberty", "médecine": True, "checkup": True, "etranger": True, "tarif": 390, "franchise": 300, "mode": "modèle HMO"}
+    "Assura": {
+        "orthodontie": 1500, "hospitalisation": "Mi-privée", "médecine": True, "checkup": False, 
+        "etranger": False, "tarif": 250, "franchise": 2500, "mode": "standard"
+    },
+    "Sympany": {
+        "dentaire": 5000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True
+    },
+    "Groupe Mutuel": {
+        "dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True
+    },
+    "Visana": {
+        "dentaire": 8000, "hospitalisation": "Flex", "médecine": True, "checkup": True, "etranger": True
+    },
+    "Concordia": {
+        "dentaire": 2000, "hospitalisation": "LIBERO", "médecine": True, "checkup": True, "etranger": True
+    },
+    "SWICA": {
+        "dentaire": 3000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True
+    },
+    "Helsana": {
+        "dentaire": 10000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True
+    },
+    "CSS": {
+        "dentaire": 4000, "hospitalisation": "Privée", "médecine": True, "checkup": True, "etranger": True
+    },
+    "Sanitas": {
+        "dentaire": 4000, "hospitalisation": "Top Liberty", "médecine": True, "checkup": True, "etranger": True, 
+        "tarif": 390, "franchise": 300, "mode": "modèle HMO"
+    }
 }
 
 def calculer_score_utilisateur(texte_pdf, preference):
@@ -31,29 +50,29 @@ def calculer_score_utilisateur(texte_pdf, preference):
     if "dentaire" in texte:
         if "5000" in texte or "10000" in texte:
             for nom in score:
-                if base_prestations[nom]["dentaire"] >= 5000:
+                if base_prestations[nom].get("dentaire", 0) >= 5000:
                     score[nom] += 2
         elif "1500" in texte:
             score["Assura"] += 2
 
     if "privée" in texte or "top liberty" in texte:
         for nom in score:
-            if "privée" in base_prestations[nom]["hospitalisation"].lower():
+            if "privée" in base_prestations[nom].get("hospitalisation", "").lower():
                 score[nom] += 2
 
     if "médecine alternative" in texte or "médecine naturelle" in texte:
         for nom in score:
-            if base_prestations[nom]["médecine"]:
+            if base_prestations[nom].get("médecine", False):
                 score[nom] += 1
 
     if "check-up" in texte or "bilan santé" in texte or "fitness" in texte:
         for nom in score:
-            if base_prestations[nom]["checkup"]:
+            if base_prestations[nom].get("checkup", False):
                 score[nom] += 1
 
     if "étranger" in texte or "à l’étranger" in texte:
         for nom in score:
-            if base_prestations[nom]["etranger"]:
+            if base_prestations[nom].get("etranger", False):
                 score[nom] += 2
 
     if preference == "📉 Réduire les coûts":
@@ -78,8 +97,7 @@ def detect_doublons(texts):
     seen_by_file = []
 
     for texte in texts:
-        lignes = [l.strip() for l in texte.lower().split('
-') if len(l.strip()) > 15 and not any(exclu in l for exclu in exclusions)]
+        lignes = [l.strip() for l in texte.lower().split('\n') if len(l.strip()) > 15 and not any(exclu in l for exclu in exclusions)]
         seen_by_file.append(set(lignes))
 
         # Vérification de doublons internes dans un même contrat
@@ -155,26 +173,18 @@ if uploaded_files:
         st.markdown(f"""
 <div style='background-color:#f9f9f9;padding: 1em 1.5em;border-radius: 10px;margin-top: 2em;'>
 <h4 style='margin-top: 0;'>Analyse IA du Contrat {i+1}</h4>""", unsafe_allow_html=True)
-        # prompt déplacé dans le bloc st.spinner
+
+        # prompt pour l'analyse de l'IA
         prompt = f"""Tu es un conseiller expert en assurance santé. Analyse ce contrat en trois parties distinctes :
 
 1. **LAMal (assurance de base obligatoire)** : quelles couvertures essentielles sont présentes ? Indique les montants annuels de prise en charge et les éventuelles franchises.
 2. **LCA (assurance complémentaire)** : quelles options ou prestations supplémentaires sont incluses ? Détaille les limites de remboursement (CHF/an ou par traitement) si présentes.
 3. **Hospitalisation** : type d'hébergement, libre choix de l'établissement, montant couvert par séjour ou par année.
 
-Pour chaque section :
-- Donne une explication simple
-
-Si aucun élément de LCA n'est détecté dans le contrat, précise que l’utilisateur n’a probablement qu’une assurance de base LAMal. Explique que cela est légalement suffisant mais peu couvrant : par exemple, la LAMal rembourse l’ambulance partiellement (jusqu’à 500 CHF/an), ne couvre pas la chambre privée, ni les médecines alternatives. Conseille d’envisager une LCA adaptée selon ses besoins.
-- Liste les garanties et montants associés si disponibles
-- Identifie les limites ou doublons
-- Fais une recommandation claire adaptée au besoin utilisateur
-
 Voici le texte à analyser :
 
-À la fin de l'analyse, indique une note globale de la couverture santé sur 10 (ex : 6/10 minimum recommandé pour LAMal + LCA + Hospitalisation).
-
 {text[:3000]}"""
+
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
@@ -193,80 +203,22 @@ Voici le texte à analyser :
                 note += 1
             if any(word in text.lower() for word in ["dentaire", "fitness", "lunettes", "étranger"]):
                 note = min(7, note + 1)
+
             st.markdown(f"""
 <div style='background-color:#f4f4f4;padding: 1.5em;border-radius: 10px;margin-top:1em;border-left: 6px solid #0052cc;'>
     <h3 style='margin-bottom:0.5em;'>Résultat de votre couverture santé</h3>
     <p style='font-size: 1.2em;'><strong>Note obtenue :</strong> {note}/10</p>
     <p style='font-style: italic;'>Une note de 6/10 est recommandée pour une couverture équilibrée incluant assurance de base, complémentaire et hospitalisation.</p>
     <p style='margin-top:1em;'>
-        {"<strong style='color:#c0392b;'>Couverture faible :</strong> vous disposez du minimum légal, pensez à compléter votre assurance." if note <= 3 else ("<strong style='color:#f39c12;'>Couverture moyenne :</strong> vous êtes partiellement protégé, certaines options peuvent être envisagées." if note <= 5 else "<strong style='color:#27ae60;'>Bonne couverture :</strong> vous bénéficiez d’une assurance santé équilibrée.")}
+        {"<strong style='color:#c0392b;'>Couverture faible :</strong> vous disposez du minimum légal, pensez à compléter votre assurance." if note <= 3 else ("<strong style='color:#f39c12;'>Couverture moyenne :</strong> vous êtes partiellement protégé, certaines options peuvent être envisagées." if note <= 5 else "<strong style='color:#27ae60;'>Bonne couverture :</strong> vous bénéficiez d’une assurance santé équilibrée.")} 
     </p>
 </div>
 """, unsafe_allow_html=True)
+
             doublons = detect_doublons(contract_texts)
             if doublons:
-                st.error("🛑 Doublons potentiels détectés entre vos contrats :")
-                st.markdown("<ul style='color:#c0392b;'>" + ''.join([f"<li>{d}</li>" for d in doublons]) + "</ul>", unsafe_allow_html=True)
-            else:
-                st.success("✅ Aucun doublon détecté dans ce contrat.")
-            
+                st.markdown("""<div style='background-color:#fff3cd;border-left: 6px solid #ffa502;padding: 1em;border-radius: 10px;margin-top:1em;'>
+                    <h4>⚠️ Doublons détectés</h4><p>Nous avons détecté certaines redondances dans vos contrats.</p></div>""", unsafe_allow_html=True)
+
         except Exception as e:
             st.warning(f"⚠️ Erreur IA : {e}")
-
-        msg = EmailMessage()
-        msg['Subject'] = f"Analyse contrat santé - Contrat {i+1}"
-        msg['From'] = "info@monfideleconseiller.ch"
-        msg['To'] = "info@monfideleconseiller.ch"
-        msg.set_content("Une analyse IA a été effectuée. Voir fichier en pièce jointe.")
-        file.seek(0)
-        msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
-        try:
-            with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-                smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
-                smtp.send_message(msg)
-        except Exception as e:
-            st.warning(f"📧 Envoi email échoué : {e}")
-
-    
-
-    st.markdown(
-    "<div style='background-color:#e6f4ea;padding:1em;border-radius:10px;'>"
-    "<h4>Analyse terminée avec succès</h4>"
-    "<p>Vous venez de recevoir une explication claire de votre contrat d’assurance santé, basée sur l’IA. Voici ce que vous pouvez faire maintenant :</p>"
-    "<ul>"
-    "<li>Consulter les détails de l’analyse ci-dessus</li>"
-    "<li>Poser une question complémentaire à l’assistant IA</li>"
-    "<li>Demander une recommandation ou un accompagnement personnalisé</li>"
-    "</ul>"
-    "<p>Nous restons à votre disposition pour toute aide complémentaire.</p>"
-    "</div>",
-    unsafe_allow_html=True
-)
-
-    # Téléchargement désactivé car 'buffer.getvalue()' n'est pas défini ici sans PDF généré.
-# Pour réintégrer cette partie, il faut générer le PDF avec FPDF comme avant (sans erreur f-string).
-
-    # Chat interactif intégré
-    st.markdown("---")
-    st.markdown("### 💬 Posez une question à notre assistant IA")
-    question_utilisateur = st.text_area("✍️ Votre question ici")
-    if st.button("Obtenir une réponse"):
-        if question_utilisateur:
-            try:
-                reponse = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "Tu es un conseiller expert en assurance santé, clair et bienveillant. Sois synthétique et utile."},
-                        {"role": "user", "content": question_utilisateur}
-                    ]
-                )
-                st.markdown("### 🤖 Réponse de l'assistant :")
-                st.markdown(reponse.choices[0].message.content, unsafe_allow_html=True)
-            except Exception as e:
-                st.error("❌ Une erreur est survenue lors de la réponse IA.")
-        else:
-            st.warning("Veuillez saisir une question avant de cliquer.")
-
-st.markdown("---")
-st.markdown("### 📫 Une question sur cette application ou l'intelligence qui l'alimente ?")
-st.markdown("Contactez-nous par email : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)")
