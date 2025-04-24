@@ -1,3 +1,4 @@
+
 import streamlit as st
 import fitz  # PyMuPDF
 from openai import OpenAI
@@ -264,3 +265,21 @@ Voici le contenu :
                 st.error("Erreur IA lors de la réponse.")
         else:
             st.warning("Veuillez écrire une question avant de soumettre.")
+# Contact final
+st.markdown("---")
+st.markdown("📫 Pour toute question : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)")
+from email.message import EmailMessage
+msg = EmailMessage()
+msg["Subject"] = f"Analyse contrat santé - Contrat {i+1}"
+msg["From"] = "info@monfideleconseiller.ch"
+msg["To"] = "info@monfideleconseiller.ch"
+msg.set_content("Une analyse IA a été effectuée. Voir fichier en pièce jointe.")
+file.seek(0)
+msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
+
+try:
+    with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+        smtp.login("info@monfideleconseiller.ch", "TON_MOT_DE_PASSE")
+        smtp.send_message(msg)
+except Exception as e:
+    st.warning(f"📨 Erreur lors de l'envoi de l'email pour le contrat {i+1} : {e}")
