@@ -47,6 +47,42 @@ base_prestations = {
         "etranger": True, "tarif": 536.6, "franchise": 2500
     }
 }
+# Configuration de la page Streamlit
+st.set_page_config(page_title="Assistant IA Assurance Santé", layout="centered")
+
+st.title("🧠 Assistant IA - Analyse de vos contrats d’assurance santé")
+
+st.markdown("""
+Ce service vous aide à :
+- Lire et comprendre **facilement** vos contrats
+- Identifier les **doublons** de garanties
+- Recevoir une **analyse IA claire et personnalisée**
+""")
+
+# Clé API
+api_key = st.text_input("🔐 Entrez votre clé secrète pour démarrer l'analyse :", type="password")
+if not api_key:
+    st.stop()
+
+client = OpenAI(api_key=api_key)
+
+# Objectif de l'utilisateur
+objectif = st.radio("🎯 Quel est votre objectif ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"])
+
+# Situation pro
+travail = st.radio("💼 Travaillez-vous au moins 8h/semaine ?", ["Oui", "Non"], index=0)
+
+# Téléversement des contrats
+uploaded_files = st.file_uploader(
+    "📄 Téléversez vos contrats PDF ou photos lisibles (JPG/PNG)",
+    type=["pdf", "jpg", "jpeg", "png"],
+    accept_multiple_files=True
+)
+
+if not uploaded_files:
+    st.info("Veuillez téléverser au moins un contrat pour lancer l'analyse.")
+    st.stop()
+
 def calculer_score_utilisateur(texte_pdf, preference):
     texte = texte_pdf.lower()
     score = {nom: 0 for nom in base_prestations}
