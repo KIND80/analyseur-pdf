@@ -71,7 +71,6 @@ for i, file in enumerate(uploaded_files):
     contract_texts.append(text)
 # Détection des doublons
 doublons_detectés, explications = detect_doublons(contract_texts)
-
 # Affichage des doublons (si plusieurs contrats)
 if len(contract_texts) > 1 and doublons_detectés:
     st.markdown("""
