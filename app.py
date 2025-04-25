@@ -129,9 +129,12 @@ def detect_doublons_par_prestation(textes):
                 doublons_intercontrats.append(prestation)
 
     return list(set(doublons_intercontrats)), explications
-    for i, texte in enumerate(contract_texts):
-        with st.spinner("🧠 Analyse IA du contrat en cours..."):
-            prompt = f"""
+# --- Analyse IA pour chaque contrat ---
+doublons_detectés, explications_doublons = detect_doublons_par_prestation(contract_texts)
+
+for i, texte in enumerate(contract_texts):
+    with st.spinner("🧠 Analyse IA du contrat en cours..."):
+        prompt = f"""
 Tu es un expert en assurance santé suisse. Analyse ce contrat en 3 sections :
 1. LAMal : quels soins sont couverts ? Montants annuels et franchises ?
 2. LCA : quelles prestations complémentaires ? Exemples (dentaire, lunettes, médecines douces, etc.) ? Limites ?
@@ -145,36 +148,34 @@ Tu es un expert en assurance santé suisse. Analyse ce contrat en 3 sections :
 Voici le contenu du contrat :
 {texte[:3000]}
 """
+        try:
+            reponse = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Tu es un assistant IA expert, bienveillant et pédagogue."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            resultat = reponse.choices[0].message.content
+        except Exception as e:
+            st.error(f"Erreur IA : {e}")
+            resultat = ""
 
-            try:
-                reponse = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "Tu es un assistant IA expert, bienveillant et pédagogue."},
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-                resultat = reponse.choices[0].message.content
-            except Exception as e:
-                st.error(f"Erreur IA : {e}")
-                resultat = ""
+    st.markdown(f"### 🧾 Détails de l’analyse IA du Contrat {i+1}")
+    st.markdown(resultat)
 
-        # Stockage du résultat pour utilisation ultérieure
-        contract_texts[i] = texte
-        st.markdown(f"### 🧾 Détails de l’analyse IA du Contrat {i+1}")
-        st.markdown(resultat)
-        # Détection simple de la présence des types de couverture
-        has_lamal = "lamal" in texte.lower()
-        has_lca = any(m in texte.lower() for m in ["complémentaire", "lca", "lunettes", "dentaire", "médecine alternative", "orthodontie"])
-        has_hospital = "hospitalisation" in texte.lower() or "chambre" in texte.lower()
+    # Résumé synthétique
+    has_lamal = "lamal" in texte.lower()
+    has_lca = any(m in texte.lower() for m in ["complémentaire", "lca", "lunettes", "dentaire", "médecine alternative", "orthodontie"])
+    has_hospital = "hospitalisation" in texte.lower() or "chambre" in texte.lower()
 
-        score = 0
-        if has_lamal: score += 2
-        if has_lca: score += 3
-        if has_hospital: score += 1
+    score = 0
+    if has_lamal: score += 2
+    if has_lca: score += 3
+    if has_hospital: score += 1
 
-        st.markdown("---")
-        st.markdown(f"""
+    st.markdown("---")
+    st.markdown(f"""
 <div style='background-color:#eaf4ff;padding:1.5em;border-left: 5px solid #007BFF;border-radius:8px;margin-bottom:1em'>
 <h3>🔍 Résumé global de l’analyse du contrat {i+1}</h3>
 <ul>
@@ -186,18 +187,7 @@ Voici le contenu du contrat :
 <p><em>Conseil IA :</em> {"Pensez à compléter votre protection avec une complémentaire ou une meilleure hospitalisation." if score < 6 else "Votre couverture santé semble équilibrée selon les informations lues."}</p>
 </div>
 """, unsafe_allow_html=True)
-    # Détection des doublons entre contrats
-    if len(contract_texts) > 1 and doublons_detectés:
-        st.markdown("""
-        <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
-        <h4>🔁 Doublons détectés entre les contrats</h4>
-        <p>Des <strong>prestations complémentaires similaires</strong> (LCA) ont été identifiées dans plusieurs contrats :</p>
-        <ul>
-        """ + "".join([f"<li>{exp}</li>" for exp in explications_doublons]) + """
-        </ul>
-        <p><strong>Recommandation :</strong> Comparez les plafonds et durées de remboursement. Supprimez les redondances pour éviter de payer deux fois pour le même type de garantie.</p>
-        </div>
-        """, unsafe_allow_html=True)
+
     elif len(contract_texts) == 1 and doublons_detectés:
         st.markdown("""
         <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
