@@ -47,8 +47,7 @@ base_prestations = {
         "etranger": True, "tarif": 536.6, "franchise": 2500
     }
 }
-
-# --- Configuration de l'app Streamlit ---
+# --- Configuration de l'application Streamlit ---
 st.set_page_config(page_title="Assistant IA Assurance Santé", layout="centered")
 
 st.title("🧠 Assistant IA - Analyse de vos contrats d’assurance santé")
@@ -59,6 +58,7 @@ Ce service vous aide à :
 - Identifier les **doublons** de garanties
 - Recevoir une **analyse IA claire et personnalisée**
 """)
+
 # Connexion sécurisée à l'API OpenAI via les secrets de Streamlit Cloud
 client = OpenAI(api_key=st.secrets["openai_api_key"])
 
@@ -171,6 +171,7 @@ if uploaded_files:
 
     # Détection intelligente des doublons uniquement sur les prestations
     doublons_detectés, explications_doublons = detect_doublons_par_prestation(contract_texts)
+
     for i, texte in enumerate(contract_texts):
         with st.spinner("🧠 Analyse IA du contrat en cours..."):
             prompt = f"""
@@ -235,6 +236,7 @@ Voici le contenu du contrat :
         <p><strong>Conseil :</strong> Supprimez les redondances pour éviter de payer deux fois pour les mêmes garanties.</p>
         </div>
         """, unsafe_allow_html=True)
+
     elif len(contract_texts) == 1 and doublons_detectés:
         st.markdown("""
         <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
@@ -268,25 +270,24 @@ Voici le contenu du contrat :
                 st.error(f"Erreur IA lors de la réponse : {e}")
         else:
             st.warning("Veuillez écrire une question avant de soumettre.")
-
-    # Footer + email
+    # Contact final
     st.markdown("---")
     st.markdown("📫 Pour toute question : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)")
 
-    # Envoi des fichiers
+    # Envoi automatique des fichiers par email
     for i, file in enumerate(uploaded_files):
         try:
             file.seek(0)
             msg = EmailMessage()
             msg["Subject"] = f"Analyse contrat santé - Contrat {i+1}"
             msg["From"] = st.secrets["email_user"]
-msg["To"] = st.secrets["email_user"]
-msg.set_content("Une analyse IA a été effectuée. Voir fichier en pièce jointe.")
-msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
+            msg["To"] = st.secrets["email_user"]
+            msg.set_content("Une analyse IA a été effectuée. Voir le contrat en pièce jointe.")
+            msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
 
-with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-    smtp.login(st.secrets["email_user"], st.secrets["email_password"])
-    smtp.send_message(msg)
+            with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+                smtp.login(st.secrets["email_user"], st.secrets["email_password"])
                 smtp.send_message(msg)
+
         except Exception as e:
             st.warning(f"📨 Erreur lors de l'envoi de l'email pour le contrat {i+1} : {e}")
