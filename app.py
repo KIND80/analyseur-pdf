@@ -606,5 +606,4 @@ banniere_beta = """
     <p><strong><a href="mailto:info@monfideleconseiller.ch">info@monfideleconseiller.ch</a></strong></p>
 </div>
 """
-
 st.markdown(banniere_beta, unsafe_allow_html=True)
