@@ -12,15 +12,15 @@ from email.message import EmailMessage
 st.set_page_config(page_title="Assistant IA Assurance Santé", layout="centered")
 
 # Titre principal
-st.title("🧠 Assistant IA - Analyse de vos contrats d’assurance santé")
+st.title("🤖 Assistant IA - Analyse de vos contrats d’assurance santé")
 
 # Description introductive
 st.markdown("""
 Ce service vous aide à :
-- Lire et comprendre **facilement** vos contrats
-- Identifier les **doublons** de garanties complémentaires
-- Recevoir une **analyse IA claire et personnalisée**
-- Poser vos questions à un expert IA assurance
+- **Lire et comprendre **facilement** vos contrats**
+- **Identifier les **doublons** de garanties complémentaires**
+- **Recevoir une **analyse IA claire et personnalisée**
+- **Poser vos questions à un expert IA assurance**
 """)
 
 # Message d'avertissement IA
@@ -62,14 +62,14 @@ st.markdown("""
 # Clé API sécurisée
 client = OpenAI(api_key=st.secrets["openai_api_key"])
 # Objectif de l'utilisateur
-objectif = st.radio("🎯 Quel est votre objectif principal ?", [
+objectif = st.radio("🎯 **Quel est votre objectif principal** ?", [
     "📉 Réduire les coûts",
     "📈 Améliorer les prestations",
     "❓ Je ne sais pas encore"
 ])
 
 # Statut professionnel
-travail = st.radio("💼 Travaillez-vous au moins 8h/semaine ?", ["Oui", "Non"], index=0)
+travail = st.radio("💼 **Travaillez-vous au moins 8h/semaine** ?", ["Oui", "Non"], index=0)
 
 # Téléversement des fichiers
 uploaded_files = st.file_uploader(
@@ -136,13 +136,13 @@ for i, texte in enumerate(contract_texts):
     with st.spinner("🧠 Analyse IA du contrat en cours..."):
         prompt = f"""
 Tu es un expert en assurance santé suisse. Analyse ce contrat en 3 sections :
-1. LAMal : quels soins sont couverts ? Montants annuels et franchises ?
-2. LCA : quelles prestations complémentaires ? Exemples (dentaire, lunettes, médecines douces, etc.) ? Limites ?
-3. Hospitalisation : type de chambre, choix du médecin ou de l’hôpital, montant maximal remboursé ?
+1. **LAMal** : quels soins sont couverts ? Montants annuels et franchises ? si la personne veut reduire le coût il doit augmenter sa franchise au maximum ou changer de model de la base
+2. **LCA** : quelles prestations complémentaires ? Exemples (dentaire, lunettes, médecines douces, etc.) ? Limites ? les remboursements 
+3. **Hospitalisation** : type de chambre, choix du médecin ou de l’hôpital, montant maximal remboursé ?
 
 - Présente les garanties **en bullet points clairs**.
-- Si une section est absente (ex : pas de LAMal), mentionne-le clairement.
-- Fais une synthèse finale avec une **note sur 10** et une **recommandation personnalisée**.
+- Si une section est absente (ex : pas de LAMal), mentionne-le clairement en gras.
+- Fais une synthèse finale avec une **note sur 10 en gras** et une **recommandation personnalisée**.
 - Sois bienveillant, pédagogique, et évite le jargon.
 
 Voici le contenu du contrat :
