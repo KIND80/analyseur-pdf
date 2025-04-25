@@ -596,15 +596,14 @@ banniere_beta = """
     padding:1.5em;
     border-radius:10px;
     margin-top:2em;
-    font-size:1.1em;
+    font-size:1.05em;
 '>
-    ⚠️ <strong>Attention :</strong> Ce service repose sur une intelligence artificielle en <strong>version bêta</strong>.
-    Malgré nos efforts pour garantir des résultats fiables, des erreurs peuvent survenir.
+    <p>⚠️ <strong>Attention :</strong> Ce service repose sur une intelligence artificielle en <strong>version bêta</strong>.
+    Malgré nos efforts pour garantir des résultats fiables, des erreurs peuvent survenir.</p>
 
-    <br><br>
-    👉 Pour valider ou approfondir l’analyse, nous vous recommandons de contacter un expert humain :
+    <p>👉 Pour valider ou approfondir l’analyse, nous vous recommandons de contacter un expert humain :</p>
 
-    <strong><a href="mailto:info@monfideleconseiller.ch">info@monfideleconseiller.ch</a></strong>
+    <p><strong><a href="mailto:info@monfideleconseiller.ch">info@monfideleconseiller.ch</a></strong></p>
 </div>
 """
 
