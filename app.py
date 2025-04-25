@@ -60,11 +60,8 @@ Ce service vous aide à :
 - Recevoir une **analyse IA claire et personnalisée**
 """)
 # Clé API
-api_key = st.text_input("🔐 Entrez votre clé secrète pour démarrer l'analyse :", type="password")
-if not api_key:
-    st.stop()
 
-client = OpenAI(api_key=api_key)
+client = OpenAI(api_key=st.secrets["openai_api_key"])
 
 # Objectif de l'utilisateur
 objectif = st.radio("🎯 Quel est votre objectif ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"])
