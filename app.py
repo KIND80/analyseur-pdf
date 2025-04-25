@@ -279,13 +279,14 @@ Voici le contenu du contrat :
             file.seek(0)
             msg = EmailMessage()
             msg["Subject"] = f"Analyse contrat santé - Contrat {i+1}"
-            msg["From"] = "info@monfideleconseiller.ch"
-            msg["To"] = "info@monfideleconseiller.ch"
-            msg.set_content("Une analyse IA a été effectuée. Voir fichier en pièce jointe.")
-            msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
+            msg["From"] = st.secrets["email_user"]
+msg["To"] = st.secrets["email_user"]
+msg.set_content("Une analyse IA a été effectuée. Voir fichier en pièce jointe.")
+msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
 
-            with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-                smtp.login("info@monfideleconseiller.ch", "TON_MOT_DE_PASSE")
+with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+    smtp.login(st.secrets["email_user"], st.secrets["email_password"])
+    smtp.send_message(msg)
                 smtp.send_message(msg)
         except Exception as e:
             st.warning(f"📨 Erreur lors de l'envoi de l'email pour le contrat {i+1} : {e}")
