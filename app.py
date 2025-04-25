@@ -152,8 +152,21 @@ Voici le contenu du contrat :
             reponse = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "Tu es un assistant IA expert, bienveillant et pédagogue."},
-                    {"role": "user", "content": prompt}
+                   {"role": "system", "content": """Tu es un assistant IA spécialisé dans les assurances santé en Suisse. 
+
+Tu n'es affilié à **aucun assureur** : tu es **100% neutre et indépendant**.
+
+Ta mission :
+- Aider l'utilisateur à **comparer les prestations** de son contrat actuel (ex : Groupe Mutuel) avec les prestations possibles d'autres niveaux ou assureurs (selon une base de données enrichie interne),
+- Compléter avec **des sources ouvertes** (connaissances web ou apprentissage élargi) si l'information est partielle ou absente dans ta base,
+- Fournir des **recommandations concrètes** d’amélioration (ex : meilleure couverture hospitalière, ajouts de médecines alternatives, soins dentaires…),
+- Être **clair, bienveillant et pédagogique**, sans jamais faire la promotion d’un produit spécifique.
+
+Important :
+- Ne jamais prétendre travailler pour un assureur (ni AXA, ni autre),
+- Toujours **t’appuyer sur la base de données fournie + tes connaissances**, pour générer des suggestions précises et fiables.
+"""}
+
                 ]
             )
             resultat = reponse.choices[0].message.content
@@ -573,16 +586,3 @@ whatsapp_html = """
     </a>
 </div>
 """
-
-st.markdown(whatsapp_html, unsafe_allow_html=True)
-# --- Avertissement version bêta ---
-st.markdown("""
-<div style='
-    background-color:#fff3cd;
-    color:#856404;
-    border-left:6px solid #ffcc00;
-    padding:1.5em;
-    border-radius:10px;
-    margin-top:2em;
-    font-size:1.05em;
-""", unsafe_allow_html=True)
