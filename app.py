@@ -48,7 +48,7 @@ base_prestations = {
     }
 }
 
-# Configuration de la page Streamlit
+# --- Configuration de l'app Streamlit ---
 st.set_page_config(page_title="Assistant IA Assurance Santé", layout="centered")
 
 st.title("🧠 Assistant IA - Analyse de vos contrats d’assurance santé")
@@ -59,12 +59,15 @@ Ce service vous aide à :
 - Identifier les **doublons** de garanties
 - Recevoir une **analyse IA claire et personnalisée**
 """)
-# Clé API
-
+# Connexion sécurisée à l'API OpenAI via les secrets de Streamlit Cloud
 client = OpenAI(api_key=st.secrets["openai_api_key"])
 
 # Objectif de l'utilisateur
-objectif = st.radio("🎯 Quel est votre objectif ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"])
+objectif = st.radio("🎯 Quel est votre objectif ?", [
+    "📉 Réduire les coûts",
+    "📈 Améliorer les prestations",
+    "❓ Je ne sais pas encore"
+])
 
 # Situation professionnelle
 travail = st.radio("💼 Travaillez-vous au moins 8h/semaine ?", ["Oui", "Non"], index=0)
@@ -79,8 +82,7 @@ uploaded_files = st.file_uploader(
 if not uploaded_files:
     st.info("Veuillez téléverser au moins un contrat pour lancer l'analyse.")
     st.stop()
-
-# Fonction de scoring utilisateur
+# Fonction de scoring utilisateur selon ses préférences et les prestations détectées
 def calculer_score_utilisateur(texte_pdf, preference):
     texte = texte_pdf.lower()
     score = {nom: 0 for nom in base_prestations}
@@ -90,9 +92,9 @@ def calculer_score_utilisateur(texte_pdf, preference):
             if base_prestations[nom].get("dentaire", 0) >= 3000:
                 score[nom] += 2
 
-    if "privée" in texte or "top liberty" in texte or "libero" in texte or "flex" in texte:
+    if any(word in texte for word in ["privée", "top liberty", "libero", "flex"]):
         for nom in score:
-            if "privée" in base_prestations[nom].get("hospitalisation", "").lower() or "libero" in base_prestations[nom]["hospitalisation"].lower():
+            if base_prestations[nom].get("hospitalisation", "").lower() in ["privée", "top liberty", "libero", "flex"]:
                 score[nom] += 2
 
     if "médecine alternative" in texte or "médecine naturelle" in texte:
@@ -100,12 +102,12 @@ def calculer_score_utilisateur(texte_pdf, preference):
             if base_prestations[nom]["médecine"]:
                 score[nom] += 1
 
-    if "check-up" in texte or "bilan santé" in texte or "fitness" in texte:
+    if any(word in texte for word in ["check-up", "bilan santé", "fitness"]):
         for nom in score:
             if base_prestations[nom]["checkup"]:
                 score[nom] += 1
 
-    if "étranger" in texte or "à l’étranger" in texte or "international" in texte:
+    if any(word in texte for word in ["étranger", "à l’étranger", "international"]):
         for nom in score:
             if base_prestations[nom]["etranger"]:
                 score[nom] += 2
@@ -119,12 +121,12 @@ def calculer_score_utilisateur(texte_pdf, preference):
             score[nom] += 1
 
     return sorted(score.items(), key=lambda x: x[1], reverse=True)
-# Détection des doublons entre prestations couvertes
+
+# Détection des doublons entre prestations des contrats
 def detect_doublons_par_prestation(textes):
     prestations_reconnues = [
-        "dentaire", "orthodontie", "lunettes", "optique",
-        "hospitalisation", "privée", "mi-privée", "check-up", 
-        "médecine alternative", "étranger", "ambulance"
+        "dentaire", "orthodontie", "lunettes", "optique", "hospitalisation",
+        "privée", "mi-privée", "check-up", "médecine alternative", "étranger", "ambulance"
     ]
     groupes_prestations = []
     explications = []
@@ -152,8 +154,10 @@ def detect_doublons_par_prestation(textes):
     return list(set(doublons_intercontrats)), explications
 if uploaded_files:
     contract_texts = []
+
     for i, file in enumerate(uploaded_files):
         st.subheader(f"📄 Contrat {i+1}")
+
         if file.type.startswith("image"):
             st.image(file, caption="Aperçu du fichier image")
             image = Image.open(file)
@@ -165,8 +169,8 @@ if uploaded_files:
 
         contract_texts.append(text)
 
+    # Détection intelligente des doublons uniquement sur les prestations
     doublons_detectés, explications_doublons = detect_doublons_par_prestation(contract_texts)
-
     for i, texte in enumerate(contract_texts):
         with st.spinner("🧠 Analyse IA du contrat en cours..."):
             prompt = f"""
@@ -175,8 +179,8 @@ Tu es un expert en assurance santé suisse. Analyse ce contrat en 3 sections :
 2. LCA : quelles prestations complémentaires ? Limites ? Exemples (dentaire, lunettes, médecines douces…)
 3. Hospitalisation : chambre, libre choix, etc.
 
-Synthétise les garanties, signale les absences et fais une recommandation.
-
+Présente les résultats en bullet points, ajoute des remarques si absence de LAMal ou LCA.
+Fais une synthèse finale avec une note sur 10 et un conseil.
 Voici le contenu du contrat :
 {texte[:3000]}
 """
@@ -193,6 +197,7 @@ Voici le contenu du contrat :
                 st.error(f"Erreur IA : {e}")
                 resultat = ""
 
+        # Détection manuelle basique
         has_lamal = "lamal" in texte.lower()
         has_lca = any(m in texte.lower() for m in ["complémentaire", "lca", "lunettes", "dentaire", "médecine alternative"])
         has_hospital = "hospitalisation" in texte.lower() or "chambre" in texte.lower()
@@ -201,6 +206,7 @@ Voici le contenu du contrat :
         if has_lamal: score += 2
         if has_lca: score += 3
         if has_hospital: score += 1
+
         st.markdown("---")
         st.markdown(f"""
 <div style='background-color:#eaf4ff;padding:1.5em;border-left: 5px solid #007BFF;border-radius:8px;margin-bottom:1em'>
@@ -211,13 +217,13 @@ Voici le contenu du contrat :
     <li><strong>Hospitalisation :</strong> {"✅ Oui" if has_hospital else "<span style='color:red;'>❌ Non</span>"}</li>
 </ul>
 <p style='font-size: 1.2em;'><strong>Note globale :</strong> {score}/10</p>
-<p><em>Conseil :</em> {"Une bonne base, mais pensez à renforcer votre protection avec des complémentaires." if score < 6 else "Votre couverture santé est équilibrée."}</p>
+<p><em>Conseil :</em> {"Pensez à compléter votre couverture avec une LCA adaptée." if score < 6 else "Votre couverture santé est équilibrée."}</p>
 </div>
 """, unsafe_allow_html=True)
 
         st.markdown(f"### 🧾 Détails de l’analyse IA du Contrat {i+1}")
         st.markdown(resultat)
-
+    # Doublons
     if len(contract_texts) > 1 and doublons_detectés:
         st.markdown("""
         <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
@@ -233,7 +239,7 @@ Voici le contenu du contrat :
         st.markdown("""
         <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
         <h4>🔁 Doublons internes détectés</h4>
-        <p>Certains passages sont répétés ou similaires dans ce contrat, vérifiez :</p>
+        <p>Certains éléments apparaissent plusieurs fois dans ce contrat, veuillez vérifier :</p>
         <ul>
         """ + "".join([f"<li>{exp}</li>" for exp in explications_doublons]) + """
         </ul>
@@ -241,7 +247,8 @@ Voici le contenu du contrat :
         """, unsafe_allow_html=True)
     else:
         st.success("✅ Aucun doublon significatif détecté entre les contrats analysés.")
-    # Interaction avec l'assistant IA
+
+    # Chat IA
     st.markdown("---")
     st.subheader("💬 Posez une question à l'assistant IA")
     question_utilisateur = st.text_area("Écrivez votre question ici (ex : Que couvre mon assurance pour les lunettes ?)")
@@ -262,11 +269,11 @@ Voici le contenu du contrat :
         else:
             st.warning("Veuillez écrire une question avant de soumettre.")
 
-    # Contact final
+    # Footer + email
     st.markdown("---")
     st.markdown("📫 Pour toute question : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)")
 
-    # Envoi de l'email avec les contrats
+    # Envoi des fichiers
     for i, file in enumerate(uploaded_files):
         try:
             file.seek(0)
@@ -278,7 +285,7 @@ Voici le contenu du contrat :
             msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
 
             with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-                smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
+                smtp.login("info@monfideleconseiller.ch", "TON_MOT_DE_PASSE")
                 smtp.send_message(msg)
         except Exception as e:
             st.warning(f"📨 Erreur lors de l'envoi de l'email pour le contrat {i+1} : {e}")
