@@ -585,10 +585,3 @@ st.markdown("""
     border-radius:10px;
     margin-top:2em;
     font-size:1.05em;
-'>
-    <p>⚠️ <strong>Attention :</strong> Ce service repose sur une intelligence artificielle en <strong>version bêta</strong>.</p>
-    <p>Malgré nos efforts pour garantir des résultats fiables, des approximations peuvent survenir.</p>
-    <p>👉 Pour valider ou approfondir l’analyse, nous vous recommandons de contacter un expert humain :</p>
-    <p><strong><a href="mailto:info@monfideleconseiller.ch">info@monfideleconseiller.ch</a></strong></p>
-</div>
-""", unsafe_allow_html=True)
