@@ -19,7 +19,7 @@ st.markdown("""
 Ce service vous aide à :
 - **Lire et comprendre **facilement** vos contrats**
 - **Identifier les **doublons** de garanties complémentaires**
-- **Recevoir une **analyse IA claire et personnalisée**
+- Recevoir une **analyse IA claire et personnalisée**
 - **Poser vos questions à un expert IA assurance**
 """)
 
@@ -28,7 +28,7 @@ st.info("""
 ⚠️ **Note** : Cette analyse IA est basée sur des données enrichies et des technologies avancées. 
 Elle reste une version bêta. Des erreurs peuvent survenir.
 
-👉 Pour une confirmation ou un conseil personnalisé, contactez-nous : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)
+👉 Pour une confirmation ou un conseil personnalisé, contactez-nous : [contact@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)
 """)
 
 # Bouton WhatsApp flottant via HTML/CSS
@@ -142,7 +142,7 @@ Tu es un expert en assurance santé suisse. Analyse ce contrat en 3 sections :
 
 - Présente les garanties **en bullet points clairs**.
 - Si une section est absente (ex : pas de LAMal), mentionne-le clairement en gras.
-- Fais une synthèse finale avec une **note sur 10 en gras** et une **recommandation personnalisée**.
+- Fais une synthèse finale avec une **note sur 10 en gras** et une **recommandation personnalisée en fonction de ce que la personne veut faire dans son objectif de depart**.
 - Sois bienveillant, pédagogique, et évite le jargon.
 
 Voici le contenu du contrat :
@@ -167,7 +167,7 @@ Tu es un assistant IA expert, neutre et bienveillant, spécialisé en assurance 
 2. Identifier ce qu’il **couvre ou oublie**
 3. Comparer ces prestations à celles de ta **base interne**
 4. **Suggérer des pistes d'amélioration** (ex : chambre privée, soins dentaires, couverture à l’étranger)
-5. Fournir, si possible, des **montants concrets** (ex : "votre contrat ne couvre pas les lunettes, alors que la moyenne du marché est 150 CHF/3 ans")
+5. Fournir, si possible, des **montants concrets et des prestations que tu as dans ta base de donnée** (ex : "votre contrat ne couvre pas les lunettes, alors que la moyenne du marché est 150 CHF/3 ans")
 
 📋 Exemples de comparaison :
 - "Votre contrat ne couvre pas l’hospitalisation semi-privée (valeur typique : 80% jusqu’à 5000 CHF/an)"
