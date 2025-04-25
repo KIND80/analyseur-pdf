@@ -1,4 +1,3 @@
-
 import streamlit as st
 import fitz  # PyMuPDF
 from openai import OpenAI
@@ -48,6 +47,7 @@ base_prestations = {
         "etranger": True, "tarif": 536.6, "franchise": 2500
     }
 }
+
 # Configuration de la page Streamlit
 st.set_page_config(page_title="Assistant IA Assurance Santé", layout="centered")
 
@@ -59,7 +59,6 @@ Ce service vous aide à :
 - Identifier les **doublons** de garanties
 - Recevoir une **analyse IA claire et personnalisée**
 """)
-
 # Clé API
 api_key = st.text_input("🔐 Entrez votre clé secrète pour démarrer l'analyse :", type="password")
 if not api_key:
@@ -70,7 +69,7 @@ client = OpenAI(api_key=api_key)
 # Objectif de l'utilisateur
 objectif = st.radio("🎯 Quel est votre objectif ?", ["📉 Réduire les coûts", "📈 Améliorer les prestations", "❓ Je ne sais pas encore"])
 
-# Situation pro
+# Situation professionnelle
 travail = st.radio("💼 Travaillez-vous au moins 8h/semaine ?", ["Oui", "Non"], index=0)
 
 # Téléversement des contrats
@@ -84,6 +83,7 @@ if not uploaded_files:
     st.info("Veuillez téléverser au moins un contrat pour lancer l'analyse.")
     st.stop()
 
+# Fonction de scoring utilisateur
 def calculer_score_utilisateur(texte_pdf, preference):
     texte = texte_pdf.lower()
     score = {nom: 0 for nom in base_prestations}
@@ -122,6 +122,7 @@ def calculer_score_utilisateur(texte_pdf, preference):
             score[nom] += 1
 
     return sorted(score.items(), key=lambda x: x[1], reverse=True)
+# Détection des doublons entre prestations couvertes
 def detect_doublons_par_prestation(textes):
     prestations_reconnues = [
         "dentaire", "orthodontie", "lunettes", "optique",
@@ -169,7 +170,6 @@ if uploaded_files:
 
     doublons_detectés, explications_doublons = detect_doublons_par_prestation(contract_texts)
 
-    # Analyse IA et score
     for i, texte in enumerate(contract_texts):
         with st.spinner("🧠 Analyse IA du contrat en cours..."):
             prompt = f"""
@@ -180,7 +180,7 @@ Tu es un expert en assurance santé suisse. Analyse ce contrat en 3 sections :
 
 Synthétise les garanties, signale les absences et fais une recommandation.
 
-Voici le contenu : 
+Voici le contenu du contrat :
 {texte[:3000]}
 """
             try:
@@ -204,7 +204,6 @@ Voici le contenu :
         if has_lamal: score += 2
         if has_lca: score += 3
         if has_hospital: score += 1
-
         st.markdown("---")
         st.markdown(f"""
 <div style='background-color:#eaf4ff;padding:1.5em;border-left: 5px solid #007BFF;border-radius:8px;margin-bottom:1em'>
@@ -221,6 +220,7 @@ Voici le contenu :
 
         st.markdown(f"### 🧾 Détails de l’analyse IA du Contrat {i+1}")
         st.markdown(resultat)
+
     if len(contract_texts) > 1 and doublons_detectés:
         st.markdown("""
         <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
@@ -244,8 +244,7 @@ Voici le contenu :
         """, unsafe_allow_html=True)
     else:
         st.success("✅ Aucun doublon significatif détecté entre les contrats analysés.")
-
-    # Interaction avec l'assistant
+    # Interaction avec l'assistant IA
     st.markdown("---")
     st.subheader("💬 Posez une question à l'assistant IA")
     question_utilisateur = st.text_area("Écrivez votre question ici (ex : Que couvre mon assurance pour les lunettes ?)")
@@ -256,30 +255,33 @@ Voici le contenu :
                     model="gpt-4",
                     messages=[
                         {"role": "system", "content": "Tu es un assistant expert en assurance suisse. Donne des réponses claires et personnalisées selon les contrats analysés."},
-                        {"role": "user", "content": f"Voici ce que contient mon contrat :\n{text[:2000]}\nEt voici ma question :\n{question_utilisateur}"}
+                        {"role": "user", "content": f"Voici ce que contient mon contrat :\n{contract_texts[0][:2000]}\nEt voici ma question :\n{question_utilisateur}"}
                     ]
                 )
                 st.markdown("### 🧠 Réponse de l’assistant IA")
                 st.markdown(reponse_chat.choices[0].message.content)
             except Exception as e:
-                st.error("Erreur IA lors de la réponse.")
+                st.error(f"Erreur IA lors de la réponse : {e}")
         else:
             st.warning("Veuillez écrire une question avant de soumettre.")
-# Contact final
-st.markdown("---")
-st.markdown("📫 Pour toute question : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)")
-from email.message import EmailMessage
-msg = EmailMessage()
-msg["Subject"] = f"Analyse contrat santé - Contrat {i+1}"
-msg["From"] = "info@monfideleconseiller.ch"
-msg["To"] = "info@monfideleconseiller.ch"
-msg.set_content("Une analyse IA a été effectuée. Voir fichier en pièce jointe.")
-file.seek(0)
-msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
 
-try:
-    with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-        smtp.login("info@monfideleconseiller.ch", "TON_MOT_DE_PASSE")
-        smtp.send_message(msg)
-except Exception as e:
-    st.warning(f"📨 Erreur lors de l'envoi de l'email pour le contrat {i+1} : {e}")
+    # Contact final
+    st.markdown("---")
+    st.markdown("📫 Pour toute question : [info@monfideleconseiller.ch](mailto:info@monfideleconseiller.ch)")
+
+    # Envoi de l'email avec les contrats
+    for i, file in enumerate(uploaded_files):
+        try:
+            file.seek(0)
+            msg = EmailMessage()
+            msg["Subject"] = f"Analyse contrat santé - Contrat {i+1}"
+            msg["From"] = "info@monfideleconseiller.ch"
+            msg["To"] = "info@monfideleconseiller.ch"
+            msg.set_content("Une analyse IA a été effectuée. Voir fichier en pièce jointe.")
+            msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
+
+            with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
+                smtp.login("info@monfideleconseiller.ch", "TON_MOT_DE_PASSE")
+                smtp.send_message(msg)
+        except Exception as e:
+            st.warning(f"📨 Erreur lors de l'envoi de l'email pour le contrat {i+1} : {e}")
