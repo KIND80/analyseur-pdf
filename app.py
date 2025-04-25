@@ -585,3 +585,4 @@ st.markdown("""
     border-radius:10px;
     margin-top:2em;
     font-size:1.05em;
+""", unsafe_allow_html=True)
