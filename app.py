@@ -281,7 +281,7 @@ Voici le contenu du contrat :
             msg.add_attachment(file.read(), maintype='application', subtype='pdf', filename=f"contrat_{i+1}.pdf")
 
             with smtplib.SMTP_SSL("smtp.hostinger.com", 465) as smtp:
-                smtp.login("info@monfideleconseiller.ch", "TON_MOT_DE_PASSE")
+                smtp.login("info@monfideleconseiller.ch", "D4d5d6d9d10@")
                 smtp.send_message(msg)
         except Exception as e:
             st.warning(f"📨 Erreur lors de l'envoi de l'email pour le contrat {i+1} : {e}")
