@@ -77,7 +77,6 @@ uploaded_files = st.file_uploader(
     type=["pdf", "jpg", "jpeg", "png"],
     accept_multiple_files=True
 )
-
 if not uploaded_files:
     st.warning("📤 Merci de téléverser au moins un contrat pour démarrer l’analyse.")
     st.stop()
@@ -293,23 +292,6 @@ st.markdown("""
 
 <div id="whatsapp">
     <a href="https://wa.me/41797896193" target="_blank">💬 WhatsApp</a>
-</div>
-""", unsafe_allow_html=True)
-# --- Avertissement version bêta + conseil de contact ---
-st.markdown("""
-<div style='margin-top: 2em; padding: 1em; border-radius: 10px; background-color: #fff3cd; border-left: 6px solid #ffcc00;'>
-    <h4>⚠️ Important</h4>
-    <p>
-        Cette application est alimentée par une intelligence artificielle en constante évolution.
-        <br><strong>Elle peut contenir des approximations ou des erreurs</strong>, malgré les efforts de précision.
-        <br>Nous la considérons encore comme une <strong>version bêta</strong>.
-    </p>
-    <p>
-        👉 Pour une analyse 100% fiable, <strong>nous vous recommandons de contacter un expert certifié</strong>.
-    </p>
-    <p>
-        💼 Contact recommandé : <strong><a href="mailto:info@monfideleconseiller.ch">contact@monfideleconseiller.ch</a></strong>
-    </p>
 </div>
 """, unsafe_allow_html=True)
 # --- Données LCA structurées pour enrichir l'analyse IA ---
@@ -587,8 +569,8 @@ whatsapp_html = """
 """
 
 st.markdown(whatsapp_html, unsafe_allow_html=True)
-# --- Avertissement Version Bêta ---
-banniere_beta = """
+# --- Avertissement version bêta ---
+st.markdown("""
 <div style='
     background-color:#fff3cd;
     color:#856404;
@@ -598,12 +580,9 @@ banniere_beta = """
     margin-top:2em;
     font-size:1.05em;
 '>
-    <p>⚠️ <strong>Attention :</strong> Ce service repose sur une intelligence artificielle en <strong>version bêta</strong>.
-    Malgré nos efforts pour garantir des résultats fiables, des erreurs peuvent survenir.</p>
-
+    <p>⚠️ <strong>Attention :</strong> Ce service repose sur une intelligence artificielle en <strong>version bêta</strong>.</p>
+    <p>Malgré nos efforts pour garantir des résultats fiables, des approximations peuvent survenir.</p>
     <p>👉 Pour valider ou approfondir l’analyse, nous vous recommandons de contacter un expert humain :</p>
-
     <p><strong><a href="mailto:info@monfideleconseiller.ch">info@monfideleconseiller.ch</a></strong></p>
 </div>
-"""
-st.markdown(banniere_beta, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
