@@ -187,24 +187,40 @@ Voici le contenu du contrat :
 <p><em>Conseil IA :</em> {"Pensez à compléter votre protection avec une complémentaire ou une meilleure hospitalisation." if score < 6 else "Votre couverture santé semble équilibrée selon les informations lues."}</p>
 </div>
 """, unsafe_allow_html=True)
+# --- Analyse des doublons (après avoir analysé tous les contrats) ---
+doublons_detectés, explications_doublons = detect_doublons_par_prestation(contract_texts)
 
-    elif len(contract_texts) == 1 and doublons_detectés:
-        st.markdown("""
-        <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
-        <h4>♻️ Doublons internes détectés</h4>
-        <p>Certains éléments semblent répétés <strong>au sein d’un même contrat</strong>. Cela peut indiquer :</p>
-        <ul>
-            <li>Des garanties similaires mentionnées plusieurs fois</li>
-            <li>Un risque de confusion ou mauvaise interprétation</li>
-        </ul>
-        <p><strong>Conseil :</strong> Vérifiez si des prestations sont vraiment distinctes ou si certaines font double emploi (ex. deux couvertures dentaire).</p>
-        <ul>
-        """ + "".join([f"<li>{exp}</li>" for exp in explications_doublons]) + """
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.success("✅ Aucun doublon significatif détecté entre les contrats analysés.")
+if len(contract_texts) > 1 and doublons_detectés:
+    st.markdown("""
+    <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
+    <h4>🔁 Doublons détectés entre les contrats</h4>
+    <p>Des <strong>prestations complémentaires similaires</strong> (LCA) ont été identifiées dans plusieurs contrats :</p>
+    <ul>
+    """ + "".join([f"<li>{exp}</li>" for exp in explications_doublons]) + """
+    </ul>
+    <p><strong>Recommandation :</strong> Comparez les plafonds et durées de remboursement. Supprimez les redondances pour éviter de payer deux fois pour le même type de garantie.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+elif len(contract_texts) == 1 and doublons_detectés:
+    st.markdown("""
+    <div style='background-color:#fff3cd;border-left:6px solid #ffa502;padding:1em;border-radius:10px;margin-top:1em;'>
+    <h4>♻️ Doublons internes détectés</h4>
+    <p>Certains éléments semblent répétés <strong>au sein d’un même contrat</strong>. Cela peut indiquer :</p>
+    <ul>
+        <li>Des garanties similaires mentionnées plusieurs fois</li>
+        <li>Un risque de confusion ou mauvaise interprétation</li>
+    </ul>
+    <p><strong>Conseil :</strong> Vérifiez si des prestations sont vraiment distinctes ou si certaines font double emploi (ex. deux couvertures dentaire).</p>
+    <ul>
+    """ + "".join([f"<li>{exp}</li>" for exp in explications_doublons]) + """
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+else:
+    st.success("✅ Aucun doublon significatif détecté entre les contrats analysés.")
+
     # Interaction IA
     st.markdown("---")
     st.subheader("💬 Posez une question à l'assistant IA")
